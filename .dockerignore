@@ -1,0 +1,8 @@
+**/.env*
+./dist/*
+./docker/Dockerfile
+./node_modules/*
+./git*
+./README.md
+./LICENSE
+
