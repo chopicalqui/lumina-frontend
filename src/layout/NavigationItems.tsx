@@ -19,17 +19,30 @@
  * @license GPLv3
  */
 
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./utils/consts";
-import "./index.css";
-import App from "./App.tsx";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import TimelineIcon from "@mui/icons-material/Timeline";
+import { type Navigation } from "@toolpad/core/AppProvider";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </StrictMode>
-);
+export const NAVIGATION: Navigation = [
+  {
+    kind: "header",
+    title: "Main Items",
+  },
+  {
+    kind: "divider",
+  },
+  {
+    kind: "header",
+    title: "Administration",
+  },
+  {
+    segment: "user",
+    title: "User",
+    icon: <DashboardIcon />,
+  },
+  {
+    segment: "access-token",
+    title: "Access Token",
+    icon: <TimelineIcon />,
+  },
+];

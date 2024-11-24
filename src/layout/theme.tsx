@@ -19,17 +19,38 @@
  * @license GPLv3
  */
 
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./utils/consts";
-import "./index.css";
-import App from "./App.tsx";
+import { createTheme } from "@mui/material";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </StrictMode>
-);
+// Source: https://mui.com/toolpad/core/react-app-provider/
+export const theme = createTheme({
+  cssVariables: {
+    colorSchemeSelector: "data-toolpad-color-scheme",
+  },
+  colorSchemes: {
+    light: {
+      palette: {
+        background: {
+          default: "#F9F9FE",
+          paper: "#EEEEF9",
+        },
+      },
+    },
+    dark: {
+      palette: {
+        background: {
+          default: "#2A4364",
+          paper: "#112E4D",
+        },
+      },
+    },
+  },
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 600,
+      lg: 1200,
+      xl: 1536,
+    },
+  },
+});
