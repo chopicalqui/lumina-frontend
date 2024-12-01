@@ -19,38 +19,79 @@
  * @license GPLv3
  */
 
-import React from "react";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
+import React, { Suspense } from "react";
 import { Navigate } from "@toolpad/core/AppProvider";
-import { UseQueryAlert } from "../components/feedback/TanstackAlert";
-import { UseLuminaQueryResult } from "../utils/hooks/tanstack/useQuery";
-import { Account as LuminaAccount } from "../models/account/account";
+import { Account } from "../models/account/account";
+import { ScopeEnum } from "../utils/globals";
+import LoadingIndicator from "../components/feedback/LoadingIndicator";
+import { Alert, Paper } from "@mui/material";
+import { PageEnum } from "./NavigationItems";
+import { StatusMessage } from "../models/common";
 
+/*
+ * This helper function lazy loads components.
+ * see also: https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
+ */
+// LazyLoad helper for normal pages
+const LazyLoad = (module: string) => {
+  const Component = React.lazy(() => import(`../pages/${module}.tsx`));
+  return (
+    <Suspense fallback={<LoadingIndicator open={true} />}>
+      <Component />
+    </Suspense>
+  );
+};
+
+/**
+ * Arguments for the PageContent component.
+ */
+interface PageContentOptions {
+  pathname: string;
+  me?: Account;
+  isError?: boolean;
+  statusMessage?: StatusMessage;
+  navigate: Navigate;
+}
+
+/**
+ * This component is responsible for rendering the correct page content based on the current pathname.
+ */
 const PageContent = React.memo(
-  ({
-    pathname,
-    meQuery,
-  }: {
-    pathname: string;
-    meQuery: UseLuminaQueryResult<LuminaAccount, Error>;
-    navigate: Navigate;
-  }) => {
+  ({ pathname, me, isError, statusMessage }: PageContentOptions) => {
+    let component: string | undefined = undefined;
+    if (!me) {
+      if (isError && statusMessage) {
+        return (
+          <Alert severity={statusMessage.severity}>
+            {statusMessage.message}
+          </Alert>
+        );
+      }
+      return;
+    }
+
+    // Obtain the right component.
+    if (
+      pathname === `/${PageEnum.accounts}` &&
+      me.hasReadAccess(ScopeEnum.PageAccount) === true
+    ) {
+      component = "Accounts";
+    } else if (
+      pathname === `/${PageEnum.access_tokens}` &&
+      me.hasReadAccess(ScopeEnum.PageAccessToken) === true
+    ) {
+      component = "AccessTokens";
+    }
+
+    if (!component) return;
+
     return (
-      <>
-        <UseQueryAlert context={meQuery} />
-        <Box
-          sx={{
-            py: 4,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-          }}
-        >
-          <Typography>Dashboard content for {pathname}</Typography>
-        </Box>
-      </>
+      <Paper
+        sx={{ mt: 3, ml: 2, mr: 2, mb: 2, p: 1, height: "100%" }}
+        square={false}
+      >
+        {LazyLoad(component)}
+      </Paper>
     );
   }
 );

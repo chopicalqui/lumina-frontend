@@ -1,18 +1,18 @@
 /**
- * This file is part of Guardian.
+ * This file is part of Lumina.
  *
- * Guardian is free software: you can redistribute it and/or modify
+ * Lumina is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Guardian is distributed in the hope that it will be useful,
+ * Lumina is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Guardian. If not, see <https://www.gnu.org/licenses/>.
+ * along with Lumina. If not, see <https://www.gnu.org/licenses/>.
  *
  * @author Lukas Reiter
  * @copyright Copyright (C) 2024 Lukas Reiter
@@ -20,17 +20,17 @@
  */
 
 import React from "react";
-import { useQueryMe } from "./useQueryMe";
+import { useQueryMe } from "../../../models/account/account";
 import { API_PATH_PREFIX, ORG_LOGO, ORG_NAME, ORG_URL } from "../../consts";
 import { Authentication, Session } from "@toolpad/core/AppProvider";
 
 // This custom hook can be used to access the information of the currently logged in user.
 export const useQuerySession = () => {
   const meQuery = useQueryMe();
-  const me = meQuery.query.data;
+  const me = meQuery.data;
   const session: Session | null = React.useMemo(
     () =>
-      meQuery.query.isSuccess
+      meQuery.isSuccess
         ? {
             user: {
               id: me!.id,
@@ -45,7 +45,7 @@ export const useQuerySession = () => {
             },
           }
         : null,
-    [me, meQuery.query.isSuccess]
+    [me, meQuery.isSuccess]
   );
   const authentication = React.useMemo<Authentication>(() => {
     return {

@@ -19,35 +19,29 @@
  * @license GPLv3
  */
 
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import TimelineIcon from "@mui/icons-material/Timeline";
-import { type Navigation } from "@toolpad/core/AppProvider";
+import React from "react";
+import { useQueryAccounts, useQueryMe } from "../models/account/account";
+import { useDataGrid } from "../utils/hooks/mui/useDataGrid";
+import DataGrid from "../components/data/DataGrid";
+import { ScopeEnum } from "../utils/globals";
+import { getDefaultDataGridRowActions } from "../components/data/getDefaultDataGridRowActions";
 
-export enum PageEnum {
-  accounts = "accounts",
-  access_tokens = "access-tokens",
-}
+const Accounts = React.memo(() => {
+  const scope = ScopeEnum.DataGridAccount;
+  const me = useQueryMe();
+  const rowActions = getDefaultDataGridRowActions({
+    scope,
+    me: me!.data!,
+  });
+  const queryContext = useQueryAccounts();
+  const dataGrid = useDataGrid({
+    scope,
+    me: me!.data!,
+    queryContext,
+    rowActions,
+  });
 
-export const NAVIGATION: Navigation = [
-  {
-    kind: "header",
-    title: "Main Items",
-  },
-  {
-    kind: "divider",
-  },
-  {
-    kind: "header",
-    title: "Administration",
-  },
-  {
-    segment: PageEnum.accounts,
-    title: "Accounts",
-    icon: <DashboardIcon />,
-  },
-  {
-    segment: PageEnum.access_tokens,
-    title: "Access Token",
-    icon: <TimelineIcon />,
-  },
-];
+  return <DataGrid {...dataGrid} />;
+});
+
+export default Accounts;

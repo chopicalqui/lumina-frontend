@@ -24,14 +24,16 @@ import { DashboardLayout } from "@toolpad/core/DashboardLayout";
 import { useDemoRouter } from "@toolpad/core/internal";
 import { theme } from "./layout/theme";
 import { useQuerySession } from "./utils/hooks/tanstack/useQuerySession";
-import { NAVIGATION } from "./layout/NavigationItems";
 import PageContent from "./layout/PageContent";
+import { NAVIGATION, PageEnum } from "./layout/NavigationItems";
 
 export default function App() {
   const { session, authentication, meQuery } = useQuerySession();
-  const router = useDemoRouter("/page");
-  const me = meQuery.query.data;
-  //console.log("AppProviderBasic", user);
+  const router = useDemoRouter(`/${PageEnum.accounts}`);
+  const me = meQuery.data;
+  const statusMessage = meQuery.statusMessage;
+  const isError = meQuery.isError;
+
   return (
     <AppProvider
       session={session}
@@ -46,8 +48,10 @@ export default function App() {
         hideNavigation={session === null}
       >
         <PageContent
+          me={me}
+          isError={isError}
+          statusMessage={statusMessage}
           pathname={router.pathname}
-          meQuery={meQuery}
           navigate={router.navigate}
         />
       </DashboardLayout>

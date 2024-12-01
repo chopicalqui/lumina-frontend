@@ -1,12 +1,12 @@
 /**
- * This file is part of Guardian.
+ * This file is part of Lumina.
  *
- * Guardian is free software: you can redistribute it and/or modify
+ * Lumina is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Guardian is distributed in the hope that it will be useful,
+ * Lumina is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
@@ -22,8 +22,8 @@
 import React, { useEffect } from "react";
 import Snackbar from "@mui/material/Snackbar";
 import { Alert as MuiAlert, AlertProps, AlertColor } from "@mui/material";
-import { UseLuminaMutationResult } from "../../utils/hooks/tanstack/useMutation";
-import { UseLuminaQueryResult } from "../../utils/hooks/tanstack/useQuery";
+import { UseMutationResult } from "../../utils/hooks/tanstack/useMutation";
+import { UseQueryForDataGridResult } from "../../utils/hooks/tanstack/useQuery";
 
 const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
   function Alert(props, ref) {
@@ -36,11 +36,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
  * provide feedback about the fetching process back to the user.
  */
 export const UseQueryAlert = React.memo(
-  <TData, TError>({
-    context,
-  }: {
-    context: UseLuminaQueryResult<TData, TError>;
-  }) => {
+  <T,>({ context }: { context: UseQueryForDataGridResult<T> }) => {
     const { statusMessage } = context;
     if (!statusMessage) {
       return null;
@@ -63,7 +59,7 @@ export const UseMutationAlert = React.memo(
   <TData, TError, TVariables, TContext>({
     context,
   }: {
-    context: UseLuminaMutationResult<TData, TError, TVariables, TContext>;
+    context: UseMutationResult<TData, TError, TVariables, TContext>;
   }) => {
     const { statusMessage, mutation } = context;
 

@@ -19,35 +19,20 @@
  * @license GPLv3
  */
 
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import TimelineIcon from "@mui/icons-material/Timeline";
-import { type Navigation } from "@toolpad/core/AppProvider";
+import React from "react";
+import { Backdrop, CircularProgress } from "@mui/material";
 
-export enum PageEnum {
-  accounts = "accounts",
-  access_tokens = "access-tokens",
-}
+const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
+  return (
+    <div>
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={open}
+      >
+        <CircularProgress color="primary" />
+      </Backdrop>
+    </div>
+  );
+});
 
-export const NAVIGATION: Navigation = [
-  {
-    kind: "header",
-    title: "Main Items",
-  },
-  {
-    kind: "divider",
-  },
-  {
-    kind: "header",
-    title: "Administration",
-  },
-  {
-    segment: PageEnum.accounts,
-    title: "Accounts",
-    icon: <DashboardIcon />,
-  },
-  {
-    segment: PageEnum.access_tokens,
-    title: "Access Token",
-    icon: <TimelineIcon />,
-  },
-];
+export default LoadingIndicator;

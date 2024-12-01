@@ -19,6 +19,8 @@
  * @license GPLv3
  */
 
+import { GridColDef } from "@mui/x-data-grid";
+
 /**
  * This type is used to define the auto-complete options in the application.
  */
@@ -37,7 +39,42 @@ export enum AccountRole {
   Admin = 200,
 }
 
+/**
+ * Defines the IDs of the MUI DataGrids in the application.
+ *
+ * It is used for checking whether the user has access to this component.
+ */
+export enum ScopeEnum {
+  PageAccount = "page_account",
+  PageAccessToken = "page_access_token",
+  DataGridAccount = "datagrid_account",
+  DataGridAccessToken = "datagrid_access_token",
+}
+
+/**
+ * Lumina uses a centralized approach to define the meta information of the model classes. This information is used
+ * by Lumina to build the user interface and the MUI DataGrid.
+ */
+export interface MetaInfoType {
+  // Whether the column is visible in the MUI DataGrid (default is true).
+  visibleDataGrid?: boolean;
+  // Information for InputControlWrapper component.
+  inputControlInfo?: any;
+  // Column information for the MUI DataGrid.
+  dataGridInfo: GridColDef;
+}
+
 type EnumTypes = typeof AccountRole;
+
+/*
+ * This function returns the names of the enum values.
+ */
+export const getEnumNames = (enumClass: EnumTypes) => {
+  const result = Object.keys(enumClass)
+    .filter((item) => isNaN(+item))
+    .map((item) => item.replace(/_/g, " "));
+  return result;
+};
 
 /**
  * The REST API returns the user role as a number. This function converts the number to an AutoCompleteOption.

@@ -20,62 +20,96 @@
  */
 
 import React from "react";
-import { axiosClient } from "../../consts.ts";
 import {
   useQuery as useQueryTanstack,
   UseQueryOptions,
-  UseQueryResult,
+  UseQueryResult as UseQueryResultTanstack,
+  QueryKey,
 } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { handleError } from "./useMutation";
 import { StatusMessage } from "../../../models/common";
+import { MetaInfoType } from "../../globals";
 
-interface UseQueryType<Q, R> extends UseQueryOptions {
-  // The path of the REST API endpoint.
-  path: string;
+export interface UseQueryType<T> extends UseQueryOptions<T> {
   // Object containing the query parameters.
-  params?: Q;
-  // Conversion method to convert the response data to the desired format.
-  convertFn?: (data: any[]) => R;
+  params?: T;
   // If false, it disables this query from automatically running.
   enabled?: boolean;
+  // If set to true, the query will not perform any type of refetch except on mount events.
+  disableAutoRefresh?: boolean;
 }
-export interface UseLuminaQueryResult<T, Error> {
-  query: UseQueryResult<T, Error>;
+
+export interface UseQueryDataGridType<T> extends UseQueryType<T> {
+  metaInfo?: MetaInfoType[];
+}
+
+interface IUseQueryResult {
+  queryKey: QueryKey;
   statusMessage: StatusMessage | undefined;
 }
+interface IUseQueryMetaInfo {
+  metaInfo: MetaInfoType[];
+}
+export type UseQueryResult<T> = IUseQueryResult & UseQueryResultTanstack<T>;
+export type UseQueryForDataGridResult<T> = UseQueryResult<T> &
+  IUseQueryMetaInfo;
 
 // This custom hook can be used to issue a GET request to the server.
-export const useLuminaQuery = <T, Q = AxiosError<StatusMessage>, R = T>(
-  props: UseQueryType<Q, R>
-): UseLuminaQueryResult<T, Error> => {
+export const useQuery = <T>(
+  props: UseQueryDataGridType<T>
+): UseQueryForDataGridResult<T> => {
   let statusMessage: StatusMessage | undefined = undefined;
-  const { path, queryKey, params, ...options } = props;
+  const {
+    staleTime,
+    gcTime,
+    refetchInterval,
+    refetchOnWindowFocus,
+    refetchOnMount,
+    refetchOnReconnect,
+    metaInfo,
+    queryKey,
+    ...options
+  } = props;
+  const refreshOptions = React.useMemo(() => {
+    return {
+      staleTime: props.disableAutoRefresh ? Infinity : staleTime,
+      gcTime: props.disableAutoRefresh ? Infinity : gcTime,
+      refetchInterval: props.disableAutoRefresh ? false : refetchInterval,
+      refetchOnWindowFocus: props.disableAutoRefresh
+        ? false
+        : refetchOnWindowFocus,
+      refetchOnMount: props.disableAutoRefresh ? "always" : refetchOnMount,
+      refetchOnReconnect: props.disableAutoRefresh ? false : refetchOnReconnect,
+    };
+  }, [
+    props.disableAutoRefresh,
+    staleTime,
+    gcTime,
+    refetchInterval,
+    refetchOnWindowFocus,
+    refetchOnMount,
+    refetchOnReconnect,
+  ]);
+
   const query = useQueryTanstack({
     ...options,
+    ...refreshOptions,
     queryKey: queryKey,
     enabled: options.enabled ?? true,
+  }) as UseQueryResultTanstack<T, AxiosError<StatusMessage>>;
 
-    queryFn: React.useCallback(() => {
-      // console.debug(`Query: ${URL_USERS_ME}`);
-      return axiosClient
-        .get(path, {
-          /*signal: signal*/
-          params,
-        })
-        .then((response) => response.data);
-    }, [path, params]),
-  }) as UseQueryResult<T, Error>;
-
-  statusMessage = handleError(
-    query.isError,
-    query.error as AxiosError<StatusMessage>
+  statusMessage = React.useMemo(
+    () => handleError(query.isError, query.error as AxiosError<StatusMessage>),
+    [query.isError, query.error]
   );
 
   return React.useMemo(() => {
     return {
-      query,
+      ...query,
+      queryKey: queryKey,
       statusMessage,
+      metaInfo: metaInfo ?? [],
     };
-  }, [query, statusMessage]);
+  }, [query, metaInfo, statusMessage, queryKey]);
 };

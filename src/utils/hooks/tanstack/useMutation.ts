@@ -22,21 +22,17 @@
 import React from "react";
 import {
   useMutation as useTanstackMutation,
-  QueryKey,
-  UseMutationOptions,
-  UseMutationResult,
+  UseMutationOptions as useTanstackMutationOptions,
+  UseMutationResult as UseTanstackMutationResult,
 } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { StatusMessage } from "../../../models/common";
 
-interface UseMutationProps<TData, TError, TVariables, TContext>
-  extends UseMutationOptions<TData, TError, TVariables, TContext> {
-  // List of query keys that should be invalidated after a successful POST/PUT request.
-  invalidateQueryKeys?: QueryKey[];
-}
+export type UseMutationOptions<TData, TError, TVariables, TContext> =
+  useTanstackMutationOptions<TData, TError, TVariables, TContext>;
 
-export interface UseLuminaMutationResult<TData, TError, TVariables, TContext> {
-  mutation: UseMutationResult<TData, TError, TVariables, TContext>;
+export interface UseMutationResult<TData, TError, TVariables, TContext> {
+  mutation: UseTanstackMutationResult<TData, TError, TVariables, TContext>;
   statusMessage: StatusMessage | undefined;
 }
 
@@ -70,17 +66,15 @@ export const handleError = (
 
 /**
  * Wrapper around the useMutation hook from Tanstack. It ensures that network errors are handled correctly.
- * @param props
- * @returns
  */
-export const useLuminaMutation = <
+export const useMutation = <
   TData,
   TError extends AxiosError,
   TVariables,
   TContext,
 >(
-  props: UseMutationProps<TData, TError, TVariables, TContext>
-): UseLuminaMutationResult<TData, TError, TVariables, TContext> => {
+  props: UseMutationOptions<TData, TError, TVariables, TContext>
+): UseMutationResult<TData, TError, TVariables, TContext> => {
   const { ...options } = props;
   let statusMessage: StatusMessage | undefined = undefined;
 

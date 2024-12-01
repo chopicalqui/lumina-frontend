@@ -19,35 +19,19 @@
  * @license GPLv3
  */
 
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import TimelineIcon from "@mui/icons-material/Timeline";
-import { type Navigation } from "@toolpad/core/AppProvider";
+import React from "react";
+import { Box, LinearProgress, Tooltip } from "@mui/material";
+import { UseQueryResult } from "@tanstack/react-query";
 
-export enum PageEnum {
-  accounts = "accounts",
-  access_tokens = "access-tokens",
-}
+const LoadingBar = React.memo(
+  ({ query }: { query: UseQueryResult<unknown, Error> }) =>
+    query.isRefetching && (
+      <Box>
+        <Tooltip title="The table is refreshing its content in the background.">
+          <LinearProgress />
+        </Tooltip>
+      </Box>
+    )
+);
 
-export const NAVIGATION: Navigation = [
-  {
-    kind: "header",
-    title: "Main Items",
-  },
-  {
-    kind: "divider",
-  },
-  {
-    kind: "header",
-    title: "Administration",
-  },
-  {
-    segment: PageEnum.accounts,
-    title: "Accounts",
-    icon: <DashboardIcon />,
-  },
-  {
-    segment: PageEnum.access_tokens,
-    title: "Access Token",
-    icon: <TimelineIcon />,
-  },
-];
+export default LoadingBar;
