@@ -23,6 +23,8 @@ import React from "react";
 import Dialog, { DialogOptions } from "./Dialog";
 import { DetailsDialogMode } from "../../../utils/globals";
 import { Button } from "@mui/material";
+import { useConfirmDialog } from "../../../utils/hooks/mui/useConfirmDialog";
+import ConfirmationDialog from "./ConfirmDialog";
 
 /**
  * Options for opening a details dialog.
@@ -37,6 +39,7 @@ export interface DetailsDialogOptions extends DialogOptions {
  */
 const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
   const { mode, name, onClose, ...context } = props;
+  const { showDialog, ...confirmDialogOptions } = useConfirmDialog();
   const title = React.useMemo(() => {
     switch (mode) {
       case DetailsDialogMode.View:
@@ -47,6 +50,16 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
         return `Add ${name}`;
     }
   }, [mode, name]);
+
+  const onCancel = React.useCallback(
+    () =>
+      showDialog({
+        title: "Cancel",
+        message: "Are you sure you want to cancel?",
+        onConfirm: onClose,
+      }),
+    [showDialog, onClose]
+  );
 
   const buttons = React.useMemo(() => {
     switch (mode) {
@@ -64,7 +77,7 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
           <Button key="save-close" onClick={onClose}>
             Save & Close
           </Button>,
-          <Button key="cancel" onClick={onClose}>
+          <Button key="cancel" onClick={onCancel}>
             Cancel
           </Button>,
         ];
@@ -76,15 +89,18 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
           <Button key="add-close" onClick={onClose}>
             Add & Close
           </Button>,
-          <Button key="cancel" onClick={onClose}>
+          <Button key="cancel" onClick={onCancel}>
             Cancel
           </Button>,
         ];
     }
-  }, [mode, onClose]);
+  }, [mode, onClose, onCancel]);
 
   return (
-    <Dialog {...context} name={title} onClose={onClose} buttons={buttons} />
+    <>
+      <ConfirmationDialog {...confirmDialogOptions} />
+      <Dialog {...context} name={title} onClose={onClose} buttons={buttons} />
+    </>
   );
 });
 

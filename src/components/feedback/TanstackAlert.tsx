@@ -56,18 +56,18 @@ export const UseQueryAlert = React.memo(
  * provide feedback about the submission back to the user.
  */
 export const UseMutationAlert = React.memo(
-  ({ context }: { context: UseMutationResult }) => {
-    const { statusMessage, reset } = context;
-
+  ({ context }: { context?: UseMutationResult }) => {
     const onReset = React.useCallback(() => {
-      reset();
-    }, [reset]);
+      context?.reset();
+    }, [context]);
+
+    if (!context) return;
 
     return (
       <TanstackAlert
-        open={statusMessage !== undefined}
-        severity={statusMessage?.severity}
-        message={statusMessage?.message ?? ""}
+        open={context?.statusMessage !== undefined}
+        severity={context?.statusMessage?.severity}
+        message={context?.statusMessage?.message ?? ""}
         resetFn={onReset}
       />
     );

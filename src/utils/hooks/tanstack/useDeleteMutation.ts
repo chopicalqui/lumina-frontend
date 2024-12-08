@@ -25,12 +25,12 @@ import {
   UseMutationOptions,
   useMutation,
 } from "./useMutation";
-import { useConfirmDialog } from "../useConfirmDialog";
-import { ConfirmationDialogOptions } from "../../../components/feedback/ConfirmDialog";
+import { useConfirmDialog } from "../mui/useConfirmDialog";
+import { ConfirmationDialogOptions } from "../../../components/feedback/dialogs/ConfirmDialog";
 
-export interface UseConfirmMutationResult extends ConfirmationDialogOptions {
+export interface UseDeleteMutationResult extends ConfirmationDialogOptions {
   // The function that displays the confirmation dialog.
-  showDialog: () => void;
+  showDialog: (...args: any) => void;
   // useMutation context to be able to communicate any states to the component.
   mutation: UseMutationResult;
 }
@@ -39,29 +39,22 @@ export interface UseConfirmMutationResult extends ConfirmationDialogOptions {
  * Hook for component components / feedback / ConfirmationDialog that executes the given
  * mutation, once the user confirms the execution.
  */
-export const useConfirmMutation = (
+export const useDeleteMutation = (
   props: UseMutationOptions
-): UseConfirmMutationResult => {
+): UseDeleteMutationResult => {
   // Obtain handler for a ConfirmationDialog component
   const confirmDialog = useConfirmDialog();
   // Obtain handler for updating the backend
   const mutation = useMutation(props);
 
-  const onConfirm = React.useCallback(
-    (...args: any) => {
-      return confirmDialog ? mutation.mutate(args) : undefined;
-    },
-    [confirmDialog, mutation]
-  );
-
   const showDialog = React.useCallback(
-    () => () =>
+    (...args: any) =>
       confirmDialog?.showDialog({
         title: "Delete item ...",
         message: "Are you sure you want to permanently delete the item?",
-        onConfirm,
+        onConfirm: () => mutation.mutate(args),
       }),
-    [confirmDialog, onConfirm]
+    [confirmDialog, mutation]
   );
 
   return React.useMemo(() => {

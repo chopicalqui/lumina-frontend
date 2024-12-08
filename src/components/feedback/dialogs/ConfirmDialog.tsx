@@ -26,47 +26,54 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { UseConfirmDialogState } from "../../utils/hooks/useConfirmDialog";
+import { UseConfirmDialogState } from "../../../utils/hooks/mui/useConfirmDialog";
+import { Portal } from "@mui/material";
+import { UseMutationResult } from "../../../utils/hooks/tanstack/useMutation";
+import { UseMutationAlert } from "../TanstackAlert";
 
 export interface ConfirmationDialogOptions extends UseConfirmDialogState {
   // The function to be executed when the user cancels the dialog.
   onCancel: () => void;
+  mutation?: UseMutationResult;
 }
 
 /**
  * Dialog that receives the output of hook useConfirmDialog. It displays a message box that allows
  * users to confirm an action.
  */
-const ConfirmationDialog = React.memo(
-  ({ props }: { props: ConfirmationDialogOptions }) => {
-    const { open, title, message, onConfirm, onCancel } = props;
+const ConfirmationDialog = React.memo((props: ConfirmationDialogOptions) => {
+  const { open, title, message, onConfirm, onCancel, mutation } = props;
 
-    const handleConfirmation = React.useCallback(() => {
-      onConfirm?.();
-      onCancel();
-    }, [onConfirm, onCancel]);
+  const handleConfirmation = React.useCallback(() => {
+    onConfirm?.();
+    onCancel();
+  }, [onConfirm, onCancel]);
 
-    return (
-      <Dialog
-        open={open}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            {message}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onCancel} autoFocus>
-            No
-          </Button>
-          <Button onClick={handleConfirmation}>Yes</Button>
-        </DialogActions>
-      </Dialog>
-    );
-  }
-);
+  return (
+    <>
+      <UseMutationAlert context={mutation} />
+      <Portal container={document.getElementById("confirm-dialog")}>
+        <Dialog
+          open={open}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">{title}</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              {message}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onCancel} autoFocus>
+              No
+            </Button>
+            <Button onClick={handleConfirmation}>Yes</Button>
+          </DialogActions>
+        </Dialog>
+      </Portal>
+    </>
+  );
+});
 
 export default ConfirmationDialog;

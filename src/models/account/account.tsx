@@ -41,7 +41,7 @@ import {
   URL_ACCOUNTS_ME,
 } from "./common";
 import { axiosDelete, axiosGet } from "../../utils/axios";
-import { useMutation } from "../../utils/hooks/tanstack/useMutation";
+import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
 
 export const META_INFO: MetaInfoType[] = [
@@ -216,7 +216,7 @@ export const useQueryAccounts = (props: ChildQueryOptions) =>
  * Returns all accounts.
  */
 export const useDeleteAccount = () =>
-  useMutation({
+  useDeleteMutation({
     mutationFn: React.useCallback(
       async (data: any) => axiosDelete(`${URL_ACCOUNTS}/${data}`),
       []

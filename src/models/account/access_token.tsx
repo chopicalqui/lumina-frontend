@@ -32,7 +32,7 @@ import {
 } from "../../utils/hooks/tanstack/useQuery";
 import { queryKeyAccessTokens, URL_ME_ACCESS_TOKENS } from "./common";
 import { axiosDelete, axiosGet } from "../../utils/axios";
-import { useMutation } from "../../utils/hooks/tanstack/useMutation";
+import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
 
 export const META_INFO: MetaInfoType[] = [
@@ -119,7 +119,7 @@ export const useQueryAccessTokens = (props: ChildQueryOptions) =>
  * Delete's the access token with the given ID.
  */
 export const useDeleteAccessTokens = () =>
-  useMutation({
+  useDeleteMutation({
     mutationFn: React.useCallback(
       async (data: any) => axiosDelete(`${URL_ME_ACCESS_TOKENS}/${data}`),
       []

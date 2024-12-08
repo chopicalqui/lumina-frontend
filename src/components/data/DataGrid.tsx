@@ -26,10 +26,18 @@ import {
   UseDataGridResult,
   MuiDataGrid,
 } from "../../utils/hooks/mui/useDataGrid";
-import { UseMutationAlert } from "../feedback/TanstackAlert";
+import ConfirmationDialog, {
+  ConfirmationDialogOptions,
+} from "../feedback/dialogs/ConfirmDialog";
 
 const DataGrid = React.memo(<T,>(props: UseDataGridResult<T>) => {
-  const { apiRef, queryContext, mutateResetConfig, ...dataGridProps } = props;
+  const {
+    apiRef,
+    queryContext,
+    mutateResetConfig,
+    confirmResetDialogOptions,
+    ...dataGridProps
+  } = props;
   const rows = React.useMemo(
     () => queryContext?.data ?? [],
     [queryContext.data]
@@ -46,7 +54,10 @@ const DataGrid = React.memo(<T,>(props: UseDataGridResult<T>) => {
 
   return (
     <>
-      <UseMutationAlert context={mutateResetConfig} />
+      <ConfirmationDialog
+        {...(confirmResetDialogOptions as ConfirmationDialogOptions)}
+        mutation={mutateResetConfig}
+      />
       <MuiDataGrid
         {...dataGridProps}
         apiRef={apiRef}

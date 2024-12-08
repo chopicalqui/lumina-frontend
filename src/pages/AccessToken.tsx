@@ -29,9 +29,11 @@ import { useQueryMe } from "../models/account/account";
 import { useDefaultDataGridRowActions } from "../utils/hooks/mui/useDefaultDataGridRowActions";
 import { useDataGrid } from "../utils/hooks/mui/useDataGrid";
 import DataGrid from "../components/data/DataGrid";
-import { UseMutationAlert } from "../components/feedback/TanstackAlert";
 import AccessTokenDetailsDialog from "./dialogs/account/AccessTokenDetailsDialog";
 import { useDetailsDialog } from "../utils/hooks/mui/useDetailsDialog";
+import ConfirmationDialog, {
+  ConfirmationDialogOptions,
+} from "../components/feedback/dialogs/ConfirmDialog";
 
 const AccessTokens = React.memo(() => {
   // We obtain the current user's data.
@@ -50,7 +52,11 @@ const AccessTokens = React.memo(() => {
     React.useMemo(() => ({ name: "Access Token" }), [])
   );
   // We obtain the Tanstack mutation to allow deleting access tokens.
-  const mutateDelete = useDeleteAccessTokens();
+  const {
+    showDialog: showConfirmDeleteDialog,
+    mutation: mutateDelete,
+    ...confirmDeleteDialogOptions
+  } = useDeleteAccessTokens();
   // We obtain the default row actions for the DataGrid.
   const rowActions = useDefaultDataGridRowActions(
     React.useMemo(
@@ -58,9 +64,7 @@ const AccessTokens = React.memo(() => {
         me: me!.data!,
         queryContext,
         delete: {
-          onClick: (params) => {
-            mutateDelete.mutate(params.id);
-          },
+          onClick: (params) => showConfirmDeleteDialog(params.id),
         },
         view: {
           onClick: (params) => {
@@ -81,7 +85,7 @@ const AccessTokens = React.memo(() => {
           },
         },
       }),
-      [detailsDialogContext, me, mutateDelete, queryContext]
+      [detailsDialogContext, showConfirmDeleteDialog, me, queryContext]
     )
   );
   // We obtain the DataGrid configuration.
@@ -95,13 +99,16 @@ const AccessTokens = React.memo(() => {
           mode: DetailsDialogMode.Add,
           open: true,
         }),
-      []
+      [detailsDialogContext]
     ),
   });
 
   return (
     <>
-      <UseMutationAlert context={mutateDelete} />
+      <ConfirmationDialog
+        {...(confirmDeleteDialogOptions as ConfirmationDialogOptions)}
+        mutation={mutateDelete}
+      />
       <AccessTokenDetailsDialog context={detailsDialogContext} />
       <DataGrid {...dataGrid} />
     </>

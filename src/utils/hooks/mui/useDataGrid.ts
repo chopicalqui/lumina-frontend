@@ -48,6 +48,7 @@ import { QueryKey } from "@tanstack/react-query";
 import { UseMutationResult } from "../tanstack/useMutation";
 import { queryClient } from "../../consts";
 import { axiosGet, axiosPut } from "../../axios";
+import { useConfirmDialog, UseConfirmDialogOptions } from "./useConfirmDialog";
 
 // Abstraction type allowing to switch between different data grid implementations.
 export type DataGridOptions = DataGridPremiumProps;
@@ -72,6 +73,7 @@ export interface UseDataGridResult<T> extends DataGridOptions {
   querySettings: UseQueryResult<GridInitialState>;
   mutateConfig: UseMutationResult;
   mutateResetConfig: UseMutationResult;
+  confirmResetDialogOptions: UseConfirmDialogOptions;
 }
 
 /**
@@ -132,10 +134,19 @@ export const useDataGrid = <T>({
       queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
   });
 
+  const { showDialog: showConfirmResetDialog, ...confirmResetDialogOptions } =
+    useConfirmDialog();
+
   // This function is used by the DataGrid component to handle configuration updates.
-  const onResetSettings = React.useCallback(() => {
-    mutateResetConfig.mutate({});
-  }, [mutateResetConfig]);
+  const onResetSettings = React.useCallback(
+    () =>
+      showConfirmResetDialog({
+        title: "Reset DataGrid Configuration",
+        message: "Are you sure you want to reset the DataGrid configuration?",
+        onConfirm: () => mutateResetConfig.mutate({}),
+      }),
+    [mutateResetConfig, showConfirmResetDialog]
+  );
 
   // Prepare the default DataGrid toolbar
   const dataGridToolbar = useDefaultDataGridToolbar({
@@ -220,6 +231,7 @@ export const useDataGrid = <T>({
       onFilterModelChange: onConfigUpdate,
       onSortModelChange: onConfigUpdate,
       onColumnOrderChange: onConfigUpdate,
+      confirmResetDialogOptions,
     };
   }, [
     dataGrid,
@@ -233,5 +245,6 @@ export const useDataGrid = <T>({
     mutateResetConfig,
     slots,
     onConfigUpdate,
+    confirmResetDialogOptions,
   ]);
 };
