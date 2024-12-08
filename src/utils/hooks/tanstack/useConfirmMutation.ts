@@ -20,7 +20,6 @@
  */
 
 import React from "react";
-import { AxiosError } from "axios";
 import {
   UseMutationResult,
   UseMutationOptions,
@@ -29,26 +28,20 @@ import {
 import { useConfirmDialog } from "../useConfirmDialog";
 import { ConfirmationDialogOptions } from "../../../components/feedback/ConfirmDialog";
 
-export interface UseConfirmMutationResult<TData, TError, TVariables, TContext>
-  extends ConfirmationDialogOptions {
+export interface UseConfirmMutationResult extends ConfirmationDialogOptions {
   // The function that displays the confirmation dialog.
   showDialog: () => void;
   // useMutation context to be able to communicate any states to the component.
-  mutation: UseMutationResult<TData, TError, TVariables, TContext>;
+  mutation: UseMutationResult;
 }
 
 /**
  * Hook for component components / feedback / ConfirmationDialog that executes the given
  * mutation, once the user confirms the execution.
  */
-export const useConfirmMutation = <
-  TData,
-  TError extends AxiosError,
-  TVariables,
-  TContext,
->(
-  props: UseMutationOptions<TData, TError, TVariables, TContext>
-): UseConfirmMutationResult<TData, TError, TVariables, TContext> => {
+export const useConfirmMutation = (
+  props: UseMutationOptions
+): UseConfirmMutationResult => {
   // Obtain handler for a ConfirmationDialog component
   const confirmDialog = useConfirmDialog();
   // Obtain handler for updating the backend
@@ -56,9 +49,9 @@ export const useConfirmMutation = <
 
   const onConfirm = React.useCallback(
     (...args: any) => {
-      return confirmDialog ? mutation.mutation.mutate(args) : undefined;
+      return confirmDialog ? mutation.mutate(args) : undefined;
     },
-    [confirmDialog, mutation.mutation]
+    [confirmDialog, mutation]
   );
 
   const showDialog = React.useCallback(

@@ -28,50 +28,76 @@ import {
 import { AxiosError } from "axios";
 import { StatusMessage } from "../../../models/common";
 
-export type UseMutationOptions<TData, TError, TVariables, TContext> =
-  useTanstackMutationOptions<TData, TError, TVariables, TContext>;
+export type UseMutationOptions<
+  TData = unknown,
+  TError = AxiosError<StatusMessage, any>,
+  TVariables = any,
+  TContext = unknown,
+> = useTanstackMutationOptions<TData, TError, TVariables, TContext>;
 
-export interface UseMutationResult<TData, TError, TVariables, TContext> {
-  mutation: UseTanstackMutationResult<TData, TError, TVariables, TContext>;
+export interface IUseMutationResult {
   statusMessage: StatusMessage | undefined;
 }
+export type UseMutationResult<
+  TData = unknown,
+  TError = AxiosError<StatusMessage, any>,
+  TVariables = any,
+  TContext = unknown,
+> = IUseMutationResult &
+  UseTanstackMutationResult<TData, TError, TVariables, TContext>;
 
 /**
  * Handles the given error and returns a new error object. It ensures that also network errors are handled.
- * @param error
- * @returns
  */
-export const handleError = (
+export const getStatusMessage = (
   isError: boolean,
-  error: AxiosError<StatusMessage>
+  isSuccess: boolean,
+  data: any,
+  error: AxiosError<StatusMessage>,
+  isMutation: boolean = false
 ): StatusMessage | undefined => {
-  if (!isError) return;
-  if (error.code === "ERR_NETWORK") {
-    return new StatusMessage({
-      severity: "error",
-      message: "No network connection available.",
-    });
-  } else if (
-    typeof error.response?.data === "object" &&
-    "type" in (error.response?.data ?? {}) &&
-    error.response?.data?.type === "statusMessage"
-  ) {
-    return new StatusMessage({
-      severity: error.response?.data?.severity,
-      message: error.response?.data?.message,
-    });
+  let result: StatusMessage | undefined = undefined;
+  if (isError) {
+    if (error.code === "ERR_NETWORK") {
+      result = new StatusMessage({
+        severity: "error",
+        message: "No network connection available.",
+      });
+    } else if (
+      typeof data === "object" &&
+      "type" in (data ?? {}) &&
+      data?.type === "statusMessage"
+    ) {
+      result = new StatusMessage({
+        severity: data?.severity,
+        message: data?.message,
+      });
+    }
+  } else if (isMutation && isSuccess) {
+    if (
+      typeof data === "object" &&
+      "type" in (data ?? {}) &&
+      data?.type === "statusMessage"
+    ) {
+      result = data as StatusMessage;
+    } else {
+      result = new StatusMessage({
+        severity: "success",
+        message: "The operation was successful.",
+      });
+    }
   }
-  return;
+  return result;
 };
 
 /**
  * Wrapper around the useMutation hook from Tanstack. It ensures that network errors are handled correctly.
  */
 export const useMutation = <
-  TData,
-  TError extends AxiosError,
-  TVariables,
-  TContext,
+  TData = unknown,
+  TError = AxiosError<StatusMessage, any>,
+  TVariables = any,
+  TContext = undefined,
 >(
   props: UseMutationOptions<TData, TError, TVariables, TContext>
 ): UseMutationResult<TData, TError, TVariables, TContext> => {
@@ -85,14 +111,17 @@ export const useMutation = <
 
   const { ...mutationProps } = mutation;
 
-  statusMessage = handleError(
+  statusMessage = getStatusMessage(
     mutation.isError,
-    mutationProps.error as AxiosError<StatusMessage>
+    mutation.isSuccess,
+    mutationProps.data,
+    mutationProps.error as AxiosError<StatusMessage, any>,
+    true
   );
 
   return React.useMemo(() => {
     return {
-      mutation,
+      ...mutation,
       statusMessage,
     };
   }, [mutation, statusMessage]);

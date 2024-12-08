@@ -39,16 +39,25 @@ export enum AccountRole {
   Admin = 200,
 }
 
+/*
+ * This enum is used to define the modes of the details dialog in the application.
+ */
+export enum DetailsDialogMode {
+  View,
+  Edit,
+  Add,
+}
+
 /**
  * Defines the IDs of the MUI DataGrids in the application.
  *
  * It is used for checking whether the user has access to this component.
  */
 export enum ScopeEnum {
-  PageAccount = "page_account",
-  PageAccessToken = "page_access_token",
-  DataGridAccount = "datagrid_account",
-  DataGridAccessToken = "datagrid_access_token",
+  PageAccount = "e4f9c2cd-3500-4a5c-be7a-673a24e9f873",
+  PageAccessToken = "5c4da514-4545-4628-8b10-1bcebf6289a1",
+  DataGridAccount = "a822f003-e4d4-49a0-afac-25e4cd85f55d",
+  DataGridAccessToken = "f1bbfa7f-44cc-4ba7-a296-05a16a5d0eec",
 }
 
 /**
@@ -56,7 +65,7 @@ export enum ScopeEnum {
  * by Lumina to build the user interface and the MUI DataGrid.
  */
 export interface MetaInfoType {
-  // Whether the column is visible in the MUI DataGrid (default is true).
+  // Whether the column is initially visible in the MUI DataGrid (default is true).
   visibleDataGrid?: boolean;
   // Information for InputControlWrapper component.
   inputControlInfo?: any;
@@ -101,4 +110,18 @@ export const formatTimestampToUTC = (timestamp: string): Date | undefined => {
     result = new Date(timestamp.replace(/(\.\d{3})\d*/, "$1") + "Z");
   }
   return result;
+};
+
+/**
+ * Returns the value of a cookie by its name.
+ */
+export const getCookieValue = (cookieName: string): string | null => {
+  const cookies = document.cookie.split(";");
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split("=");
+    if (name.toLowerCase() === cookieName.toLocaleLowerCase()) {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
 };

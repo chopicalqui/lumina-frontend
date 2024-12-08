@@ -20,28 +20,13 @@
  */
 
 import React from "react";
-import { useQueryAccounts, useQueryMe } from "../models/account/account";
-import { useDataGrid } from "../utils/hooks/mui/useDataGrid";
-import DataGrid from "../components/data/DataGrid";
-import { ScopeEnum } from "../utils/globals";
-import { getDefaultDataGridRowActions } from "../components/data/getDefaultDataGridRowActions";
+import { UseDetailsDialogResult } from "../../../utils/hooks/mui/useDetailsDialog";
+import DetailsDialog from "../../../components/feedback/dialogs/DetailsDialog";
 
-const Accounts = React.memo(() => {
-  const scope = ScopeEnum.DataGridAccount;
-  const me = useQueryMe();
-  const rowActions = getDefaultDataGridRowActions({
-    scope,
-    me: me!.data!,
-  });
-  const queryContext = useQueryAccounts();
-  const dataGrid = useDataGrid({
-    scope,
-    me: me!.data!,
-    queryContext,
-    rowActions,
-  });
+const AccountDetailsDialog = React.memo(
+  ({ context }: { context: UseDetailsDialogResult }) => {
+    return <DetailsDialog {...context} maxWidth="xl" fullWidth />;
+  }
+);
 
-  return <DataGrid {...dataGrid} />;
-});
-
-export default Accounts;
+export default AccountDetailsDialog;

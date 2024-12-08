@@ -20,6 +20,7 @@
  */
 
 import React from "react";
+import { Link } from "@mui/material";
 import {
   formatTimestampToUTC,
   getAutoCompleteOption,
@@ -28,7 +29,10 @@ import {
   MetaInfoType,
   getEnumNames,
 } from "../../utils/globals";
-import { useQuery } from "../../utils/hooks/tanstack/useQuery";
+import {
+  ChildQueryOptions,
+  useQuery,
+} from "../../utils/hooks/tanstack/useQuery";
 import { NamedModelBase } from "../common";
 import {
   queryKeyAccounts,
@@ -36,7 +40,9 @@ import {
   URL_ACCOUNTS,
   URL_ACCOUNTS_ME,
 } from "./common";
-import { axiosClient } from "../../utils/consts";
+import { axiosDelete, axiosGet } from "../../utils/axios";
+import { useMutation } from "../../utils/hooks/tanstack/useMutation";
+import { queryClient } from "../../utils/consts";
 
 export const META_INFO: MetaInfoType[] = [
   {
@@ -63,6 +69,9 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Email",
       type: "string",
       description: "The user's email address.",
+      renderCell: (params: any) => (
+        <Link href={`mailto:${params.value}`}>{params.value}</Link>
+      ),
     },
   },
   {
@@ -80,6 +89,9 @@ export const META_INFO: MetaInfoType[] = [
       type: "singleSelect",
       valueOptions: getEnumNames(AccountRole),
       description: "The user's role memberships.",
+      align: "center",
+      headerAlign: "center",
+      valueGetter: (value: any) => value?.map((x: any) => x.label),
     },
   },
   {
@@ -171,28 +183,45 @@ export class Account extends AccountRead {
  * Returns the current user.
  */
 export const useQueryMe = () =>
-  useQuery<Account>({
+  useQuery({
     queryKey: queryKeyAccountMe,
     disableAutoRefresh: true,
     retry: 0,
-    queryFn: React.useCallback(async () => {
-      return axiosClient.get(URL_ACCOUNTS_ME).then((response) => response.data);
-    }, []),
+    queryFn: React.useCallback(
+      async () => axiosGet<Account>(URL_ACCOUNTS_ME),
+      []
+    ),
     select: React.useCallback((data: Account) => new Account(data), []),
   });
 
 /**
  * Returns all accounts.
  */
-export const useQueryAccounts = () =>
-  useQuery<Account[]>({
+export const useQueryAccounts = (props: ChildQueryOptions) =>
+  useQuery({
     queryKey: queryKeyAccounts,
-    queryFn: React.useCallback(async () => {
-      return axiosClient.get(URL_ACCOUNTS).then((response) => response.data);
-    }, []),
+    queryFn: React.useCallback(
+      async () => axiosGet<Account[]>(URL_ACCOUNTS),
+      []
+    ),
     select: React.useCallback(
       (data: Account[]) => data.map((x) => new Account(x)),
       []
     ),
     metaInfo: META_INFO,
+    scope: props.scope,
+  });
+
+/**
+ * Returns all accounts.
+ */
+export const useDeleteAccount = () =>
+  useMutation({
+    mutationFn: React.useCallback(
+      async (data: any) => axiosDelete(`${URL_ACCOUNTS}/${data}`),
+      []
+    ),
+    onSuccess: React.useCallback(() => {
+      queryClient.invalidateQueries({ queryKey: queryKeyAccounts });
+    }, []),
   });

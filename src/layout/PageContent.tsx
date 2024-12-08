@@ -75,12 +75,12 @@ const PageContent = React.memo(
       pathname === `/${PageEnum.accounts}` &&
       me.hasReadAccess(ScopeEnum.PageAccount) === true
     ) {
-      component = "Accounts";
+      component = "Account";
     } else if (
       pathname === `/${PageEnum.access_tokens}` &&
       me.hasReadAccess(ScopeEnum.PageAccessToken) === true
     ) {
-      component = "AccessTokens";
+      component = "AccessToken";
     }
 
     if (!component) return;

@@ -23,12 +23,13 @@ import React from "react";
 import { Alert } from "@mui/material";
 import LoadingBar from "./LoadingBar";
 import {
-  UseDataGridReturn,
+  UseDataGridResult,
   MuiDataGrid,
 } from "../../utils/hooks/mui/useDataGrid";
+import { UseMutationAlert } from "../feedback/TanstackAlert";
 
-const DataGrid = React.memo(<T,>(props: UseDataGridReturn<T>) => {
-  const { apiRef, queryContext, ...dataGridProps } = props;
+const DataGrid = React.memo(<T,>(props: UseDataGridResult<T>) => {
+  const { apiRef, queryContext, mutateResetConfig, ...dataGridProps } = props;
   const rows = React.useMemo(
     () => queryContext?.data ?? [],
     [queryContext.data]
@@ -45,6 +46,7 @@ const DataGrid = React.memo(<T,>(props: UseDataGridReturn<T>) => {
 
   return (
     <>
+      <UseMutationAlert context={mutateResetConfig} />
       <MuiDataGrid
         {...dataGridProps}
         apiRef={apiRef}

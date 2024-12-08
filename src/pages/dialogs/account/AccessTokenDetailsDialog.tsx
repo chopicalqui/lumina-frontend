@@ -20,9 +20,13 @@
  */
 
 import React from "react";
+import { UseDetailsDialogResult } from "../../../utils/hooks/mui/useDetailsDialog";
+import DetailsDialog from "../../../components/feedback/dialogs/DetailsDialog";
 
-const AccessTokens = React.memo(() => {
-  return <>{"AccountTokens"}</>;
-});
+const AccessTokenDetailsDialog = React.memo(
+  ({ context }: { context: UseDetailsDialogResult }) => {
+    return <DetailsDialog {...context} maxWidth="xl" fullWidth />;
+  }
+);
 
-export default AccessTokens;
+export default AccessTokenDetailsDialog;

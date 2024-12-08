@@ -30,6 +30,8 @@ export const queryKeyAccountMeSettings = [
   ...queryKeyAccountMe,
   "accountSettings",
 ];
+export const queryKeyAccessTokens = [...queryKeyAccountMe, "accessTokens"];
+export const queryKeyAccountMeDataGrid = [...queryKeyAccountMe];
 
 // REST API endpoints for accounts
 export const URL_PATH_ACCOUNTS_PREFIX = "/v1/accounts";
@@ -44,5 +46,10 @@ export const URL_USERS_ME_TABLE_DENSITY =
   URL_ACCOUNTS_ME_SETTINGS + "/table-density";
 export const URL_ACCOUNTS_ME_AVATAR = URL_ACCOUNTS_ME_SETTINGS + "/avatar";
 export const URL_ACCOUNTS_ME_AVATAR_RESET = URL_ACCOUNTS_ME_AVATAR + "/reset";
+export const URL_DATAGRID_SETTINGS =
+  URL_ACCOUNTS_ME_SETTINGS + "/data-grid/{id}";
+export const URL_DATAGRID_SETTINGS_RESET = URL_DATAGRID_SETTINGS + "/reset";
 // Notifications
 export const URL_ME_NOTIFICATIONS = URL_ACCOUNTS_ME + "/notifications";
+// Access tokens
+export const URL_ME_ACCESS_TOKENS = URL_ACCOUNTS_ME + "/access-tokens";

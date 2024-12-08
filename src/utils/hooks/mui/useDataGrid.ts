@@ -23,6 +23,7 @@ import React from "react";
 import {
   UseQueryResult,
   UseQueryForDataGridResult,
+  useQuery,
 } from "../tanstack/useQuery";
 import {
   DataGridPremium,
@@ -31,10 +32,22 @@ import {
   GridColDef,
   GridColumnVisibilityModel,
   useGridApiRef,
+  GridInitialState,
 } from "@mui/x-data-grid-premium";
 import { Account } from "../../../models/account/account";
-import { ScopeEnum } from "../../globals";
-import { getDefaultGridToolbar } from "../../../components/data/getDefaultDataGridToolbar";
+import {
+  DefaultDataGridToolbarOptions,
+  useDefaultDataGridToolbar,
+} from "./useDefaultDataGridToolbar";
+import { useMutation } from "../tanstack/useMutation";
+import {
+  queryKeyAccountMeDataGrid,
+  URL_DATAGRID_SETTINGS,
+} from "../../../models/account/common";
+import { QueryKey } from "@tanstack/react-query";
+import { UseMutationResult } from "../tanstack/useMutation";
+import { queryClient } from "../../consts";
+import { axiosGet, axiosPut } from "../../axios";
 
 // Abstraction type allowing to switch between different data grid implementations.
 export type DataGridOptions = DataGridPremiumProps;
@@ -43,12 +56,9 @@ export const MuiDataGrid = DataGridPremium;
 /**
  * This interface defines the properties of the useDataGrid hook.
  */
-export interface UseDataGridOptions<T> {
+export interface UseDataGridOptions<T> extends DefaultDataGridToolbarOptions {
   // The account of the current user.
   me: Account;
-  // The id of the current DataGrid. This is used to store the DataGrid's configuration in the local storage and
-  // save custom filters in the backend.
-  scope?: ScopeEnum;
   // The properties of the useQuery hook.
   queryContext: UseQueryForDataGridResult<T>;
   // The properties of the DataGrid component.
@@ -57,8 +67,11 @@ export interface UseDataGridOptions<T> {
   rowActions?: GridActionsColDef;
 }
 
-export interface UseDataGridReturn<T> extends DataGridOptions {
+export interface UseDataGridResult<T> extends DataGridOptions {
   queryContext: UseQueryResult<T>;
+  querySettings: UseQueryResult<GridInitialState>;
+  mutateConfig: UseMutationResult;
+  mutateResetConfig: UseMutationResult;
 }
 
 /**
@@ -66,15 +79,119 @@ export interface UseDataGridReturn<T> extends DataGridOptions {
  */
 export const useDataGrid = <T>({
   me,
-  scope,
   queryContext,
   dataGrid,
   rowActions,
-}: UseDataGridOptions<T>): UseDataGridReturn<T> => {
+  createButtonName,
+  onCreateButtonClick,
+  elements,
+}: UseDataGridOptions<T>): UseDataGridResult<T> => {
   const apiRef = useGridApiRef();
+  const scope = queryContext.scope;
+  const settingsUrl = React.useMemo(
+    () => (scope && me ? URL_DATAGRID_SETTINGS.replace("{id}", scope) : ""),
+    [scope, me]
+  );
+  const settingsResetUrl = React.useMemo(
+    () => (settingsUrl ? settingsUrl + "/reset" : ""),
+    [settingsUrl]
+  );
+  const settingsQueryKey: QueryKey = React.useMemo(
+    () =>
+      scope && me ? [...queryKeyAccountMeDataGrid, { dataGridId: scope }] : [],
+    [scope, me]
+  );
+
+  // Obtain DataGrid configuration for DataGrid.
+  const querySettings = useQuery<GridInitialState>({
+    queryKey: settingsQueryKey,
+    queryFn: React.useCallback(
+      async () => axiosGet<GridInitialState>(settingsUrl),
+      [settingsUrl]
+    ),
+    enabled: settingsQueryKey.length > 0 && settingsUrl.length > 0,
+  });
+
+  // Update DataGrid configuration for DataGrid.
+  const mutateConfig = useMutation({
+    mutationFn: React.useCallback(
+      async (data: any) => axiosPut(settingsUrl, data),
+      [settingsUrl]
+    ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
+  });
+
+  // Reset DataGrid configuration for DataGrid.
+  const mutateResetConfig = useMutation({
+    mutationFn: React.useCallback(
+      async () => axiosPut(settingsResetUrl),
+      [settingsResetUrl]
+    ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
+  });
+
+  // This function is used by the DataGrid component to handle configuration updates.
+  const onResetSettings = React.useCallback(() => {
+    mutateResetConfig.mutate({});
+  }, [mutateResetConfig]);
+
+  // Prepare the default DataGrid toolbar
+  const dataGridToolbar = useDefaultDataGridToolbar({
+    queryContext,
+    me: me,
+    onResetSettings,
+    createButtonName,
+    onCreateButtonClick,
+    elements,
+  });
+
+  // Prepare the default DataGrid slots
+  const slots = React.useMemo(() => {
+    return {
+      toolbar: dataGridToolbar,
+    };
+  }, [dataGridToolbar]);
+
+  // Prepare the DataGrid data
+  const data = React.useMemo(
+    () => (queryContext.isSuccess ? queryContext.data : []) as any[],
+    [queryContext.isSuccess, queryContext.data]
+  );
+
+  // This function is used by the DataGrid component to handle configuration updates.
+  const onConfigUpdate = React.useCallback(() => {
+    const result = apiRef.current.exportState();
+    mutateConfig.mutate(result);
+  }, [mutateConfig, apiRef]);
+
+  // We extract all columns that are initially hidden.
+  const columnVisibilityModel: GridColumnVisibilityModel = React.useMemo(() => {
+    const result: GridColumnVisibilityModel = {};
+    queryContext.metaInfo
+      .filter((x) => x?.visibleDataGrid === false)
+      .forEach((x) => {
+        result[x.dataGridInfo.field] = false;
+      });
+    return result;
+  }, [queryContext.metaInfo]);
+
+  // We ensure that per default, the initially hidden columns are part of the initialState object.
+  const initialState = React.useMemo(
+    () =>
+      Object.keys(querySettings?.data ?? {}).length > 0
+        ? querySettings?.data
+        : {
+            columns: {
+              columnVisibilityModel,
+            },
+          },
+    [querySettings, columnVisibilityModel]
+  );
 
   // Prepare the DataGrid column definition
-  const dataGridColumns: GridColDef[] = React.useMemo(() => {
+  const columns: GridColDef[] = React.useMemo(() => {
     const result: GridColDef[] = [];
     const columns = queryContext.metaInfo.map((x) => x.dataGridInfo);
     if (rowActions) {
@@ -85,43 +202,36 @@ export const useDataGrid = <T>({
     return result;
   }, [rowActions, queryContext.metaInfo]);
 
-  // Prepare the DataGrid column visibility model
-  const columnVisibilityModel: GridColumnVisibilityModel = React.useMemo(() => {
-    const result: GridColumnVisibilityModel = {};
-    queryContext.metaInfo.forEach((x) => {
-      result[x.dataGridInfo.field] = x.visibleDataGrid ?? true;
-    });
-    return result;
-  }, [queryContext.metaInfo]);
-
-  const slots = React.useMemo(() => {
+  return React.useMemo(() => {
     return {
-      toolbar: getDefaultGridToolbar({
-        me: me!,
-        scope,
-        queryKey: queryContext.queryKey,
-      }),
+      ...dataGrid,
+      apiRef,
+      rows: data,
+      columns,
+      initialState,
+      queryContext,
+      querySettings,
+      mutateConfig,
+      mutateResetConfig,
+      slots,
+      // Events to update updates on the DataGrid configuration in the backend.
+      onColumnVisibilityModelChange: onConfigUpdate,
+      onColumnWidthChange: onConfigUpdate,
+      onFilterModelChange: onConfigUpdate,
+      onSortModelChange: onConfigUpdate,
+      onColumnOrderChange: onConfigUpdate,
     };
-  }, [scope, me, queryContext.queryKey]);
-
-  // Prepare the DataGrid data
-  const data = React.useMemo(
-    () => (queryContext.isSuccess ? queryContext.data : []) as any[],
-    [queryContext.isSuccess, queryContext.data]
-  );
-
-  if (scope && !scope?.startsWith("datagrid_"))
-    throw new Error(
-      `The given id '${scope}' is invalid. The id must start with 'datagrid_'.`
-    );
-
-  return {
-    ...dataGrid,
+  }, [
+    dataGrid,
     apiRef,
-    columns: dataGridColumns,
-    rows: data,
-    columnVisibilityModel: columnVisibilityModel,
+    data,
+    columns,
+    initialState,
+    querySettings,
     queryContext,
+    mutateConfig,
+    mutateResetConfig,
     slots,
-  };
+    onConfigUpdate,
+  ]);
 };

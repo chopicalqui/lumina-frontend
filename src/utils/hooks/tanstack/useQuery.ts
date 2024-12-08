@@ -27,11 +27,17 @@ import {
   QueryKey,
 } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { handleError } from "./useMutation";
+import { getStatusMessage } from "./useMutation";
 import { StatusMessage } from "../../../models/common";
-import { MetaInfoType } from "../../globals";
+import { MetaInfoType, ScopeEnum } from "../../globals";
 
-export interface UseQueryType<T> extends UseQueryOptions<T> {
+export interface ChildQueryOptions {
+  // The id of the current DataGrid. This is used to store the DataGrid's configuration in the local storage and
+  // save custom filters in the backend.
+  scope?: ScopeEnum;
+}
+
+export interface UseQueryType<T> extends UseQueryOptions<T>, ChildQueryOptions {
   // Object containing the query parameters.
   params?: T;
   // If false, it disables this query from automatically running.
@@ -48,7 +54,7 @@ interface IUseQueryResult {
   queryKey: QueryKey;
   statusMessage: StatusMessage | undefined;
 }
-interface IUseQueryMetaInfo {
+interface IUseQueryMetaInfo extends ChildQueryOptions {
   metaInfo: MetaInfoType[];
 }
 export type UseQueryResult<T> = IUseQueryResult & UseQueryResultTanstack<T>;
@@ -61,6 +67,7 @@ export const useQuery = <T>(
 ): UseQueryForDataGridResult<T> => {
   let statusMessage: StatusMessage | undefined = undefined;
   const {
+    scope,
     staleTime,
     gcTime,
     refetchInterval,
@@ -100,16 +107,23 @@ export const useQuery = <T>(
   }) as UseQueryResultTanstack<T, AxiosError<StatusMessage>>;
 
   statusMessage = React.useMemo(
-    () => handleError(query.isError, query.error as AxiosError<StatusMessage>),
-    [query.isError, query.error]
+    () =>
+      getStatusMessage(
+        query.isError,
+        query.isSuccess,
+        query.data,
+        query.error as AxiosError<StatusMessage>
+      ),
+    [query.isError, query.isSuccess, query.data, query.error]
   );
 
   return React.useMemo(() => {
     return {
       ...query,
+      scope,
       queryKey: queryKey,
       statusMessage,
       metaInfo: metaInfo ?? [],
     };
-  }, [query, metaInfo, statusMessage, queryKey]);
+  }, [query, scope, metaInfo, statusMessage, queryKey]);
 };
