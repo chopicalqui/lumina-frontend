@@ -29,12 +29,16 @@ import {
 import { AxiosError } from "axios";
 import { getStatusMessage } from "./useMutation";
 import { StatusMessage } from "../../../models/common";
-import { MetaInfoType, ScopeEnum } from "../../globals";
+import { ScopeEnum } from "../../globals";
+import { GridRowId } from "@mui/x-data-grid";
+import { MetaInfoType } from "../../../components/inputs/controlFactoryUtils";
 
 export interface ChildQueryOptions {
   // The id of the current DataGrid. This is used to store the DataGrid's configuration in the local storage and
   // save custom filters in the backend.
   scope?: ScopeEnum;
+  // The query key of the current DataGrid.
+  rowId?: GridRowId;
 }
 
 export interface UseQueryType<T> extends UseQueryOptions<T>, ChildQueryOptions {

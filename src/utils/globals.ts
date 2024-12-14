@@ -19,8 +19,6 @@
  * @license GPLv3
  */
 
-import { GridColDef } from "@mui/x-data-grid";
-
 /**
  * This type is used to define the auto-complete options in the application.
  */
@@ -37,6 +35,8 @@ export enum AccountRole {
   Auditor = 100,
   // Full administrative access role
   Admin = 200,
+  // Permission to create access tokens
+  Api = 300,
 }
 
 /*
@@ -58,19 +58,6 @@ export enum ScopeEnum {
   PageAccessToken = "5c4da514-4545-4628-8b10-1bcebf6289a1",
   DataGridAccount = "a822f003-e4d4-49a0-afac-25e4cd85f55d",
   DataGridAccessToken = "f1bbfa7f-44cc-4ba7-a296-05a16a5d0eec",
-}
-
-/**
- * Lumina uses a centralized approach to define the meta information of the model classes. This information is used
- * by Lumina to build the user interface and the MUI DataGrid.
- */
-export interface MetaInfoType {
-  // Whether the column is initially visible in the MUI DataGrid (default is true).
-  visibleDataGrid?: boolean;
-  // Information for InputControlWrapper component.
-  inputControlInfo?: any;
-  // Column information for the MUI DataGrid.
-  dataGridInfo: GridColDef;
 }
 
 type EnumTypes = typeof AccountRole;

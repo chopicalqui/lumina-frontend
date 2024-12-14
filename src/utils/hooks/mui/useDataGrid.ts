@@ -181,9 +181,9 @@ export const useDataGrid = <T>({
   const columnVisibilityModel: GridColumnVisibilityModel = React.useMemo(() => {
     const result: GridColumnVisibilityModel = {};
     queryContext.metaInfo
-      .filter((x) => x?.visibleDataGrid === false)
+      .filter((x) => x.dataGridInfo && x?.visibleDataGrid === false)
       .forEach((x) => {
-        result[x.dataGridInfo.field] = false;
+        result[x.dataGridInfo!.field] = false;
       });
     return result;
   }, [queryContext.metaInfo]);
@@ -204,7 +204,9 @@ export const useDataGrid = <T>({
   // Prepare the DataGrid column definition
   const columns: GridColDef[] = React.useMemo(() => {
     const result: GridColDef[] = [];
-    const columns = queryContext.metaInfo.map((x) => x.dataGridInfo);
+    const columns = queryContext.metaInfo
+      .filter((x) => x.dataGridInfo !== undefined)
+      .map((x) => x.dataGridInfo!);
     if (rowActions) {
       result.push(rowActions, ...columns);
     } else {

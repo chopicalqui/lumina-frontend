@@ -26,7 +26,6 @@ import {
   getAutoCompleteOption,
   ScopeEnum,
   AccountRole,
-  MetaInfoType,
   getEnumNames,
 } from "../../utils/globals";
 import {
@@ -39,10 +38,12 @@ import {
   queryKeyAccountMe,
   URL_ACCOUNTS,
   URL_ACCOUNTS_ME,
+  verifyEmail,
 } from "./common";
 import { axiosDelete, axiosGet } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
+import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 
 export const META_INFO: MetaInfoType[] = [
   {
@@ -62,6 +63,15 @@ export const META_INFO: MetaInfoType[] = [
       description: "The name of the account.",
       editable: true,
     },
+    mui: {
+      textfield: {
+        field: "name",
+        label: "Name",
+        disabled: true,
+        noSubmit: true,
+        helperText: "The name of the account.",
+      },
+    },
   },
   {
     dataGridInfo: {
@@ -73,13 +83,29 @@ export const META_INFO: MetaInfoType[] = [
         <Link href={`mailto:${params.value}`}>{params.value}</Link>
       ),
     },
+    mui: {
+      textfield: {
+        field: "email",
+        label: "Email",
+        disabled: true,
+        noSubmit: true,
+        helperText: "The name of the account.",
+        getError: verifyEmail,
+      },
+    },
   },
   {
     dataGridInfo: {
       field: "locked",
       headerName: "Locked",
       type: "boolean",
-      description: "Defines whether the user is locked.",
+      description: "Defines whether the account is locked.",
+    },
+    mui: {
+      switch: {
+        field: "locked",
+        label: "Locked",
+      },
     },
   },
   {
@@ -101,6 +127,15 @@ export const META_INFO: MetaInfoType[] = [
       type: "date",
       description: "The date from which onward the account can be used.",
     },
+    mui: {
+      datapicker: {
+        field: "activeFrom",
+        label: "Active From",
+        required: true,
+        disablePast: true,
+        helperText: "The date from which onward the account can be used.",
+      },
+    },
   },
   {
     dataGridInfo: {
@@ -109,6 +144,15 @@ export const META_INFO: MetaInfoType[] = [
       type: "date",
       description: "The date the account expires.",
     },
+    mui: {
+      datapicker: {
+        field: "activeUntil",
+        label: "Active Until",
+        required: true,
+        disablePast: true,
+        helperText: "The date until which the account can be used.",
+      },
+    },
   },
   {
     dataGridInfo: {
@@ -116,6 +160,16 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Last Login",
       type: "dateTime",
       description: "The date [UTC] the user logged in the last time.",
+    },
+    mui: {
+      datapicker: {
+        field: "lastLogin",
+        label: "Last Login",
+        required: false,
+        disabled: true,
+        noSubmit: true,
+        helperText: "The date the user logged in the last time.",
+      },
     },
   },
 ];
@@ -156,6 +210,7 @@ export class Account extends AccountRead {
   sidebarCollapsed: boolean;
   tableDensity: string;
   image: string;
+  _roles: AccountRole[];
 
   constructor(data: any) {
     super(data);
@@ -163,19 +218,43 @@ export class Account extends AccountRead {
     this.sidebarCollapsed = data.sidebar_collapsed;
     this.tableDensity = data.table_density;
     this.image = data.avatar;
+    this._roles = data.roles;
   }
 
-  hasReadAccess(component?: ScopeEnum) {
-    return true;
+  hasReadAccess(scope?: ScopeEnum) {
+    return (
+      scope &&
+      (this._roles.includes(AccountRole.Admin) ||
+        (this._roles.includes(AccountRole.Auditor) &&
+          ![ScopeEnum.PageAccessToken].includes(scope)))
+    );
   }
-  hasCreateAccess(component?: ScopeEnum) {
-    return true;
+
+  hasCreateAccess(scope?: ScopeEnum) {
+    return (
+      scope &&
+      (this._roles.includes(AccountRole.Admin) ||
+        (this._roles.includes(AccountRole.Api) &&
+          scope === ScopeEnum.PageAccessToken))
+    );
   }
-  hasWriteAccess(component?: ScopeEnum) {
-    return true;
+
+  hasWriteAccess(scope?: ScopeEnum) {
+    return (
+      scope &&
+      (this._roles.includes(AccountRole.Admin) ||
+        (this._roles.includes(AccountRole.Api) &&
+          scope === ScopeEnum.PageAccessToken))
+    );
   }
-  hasDeleteAccess(component?: ScopeEnum) {
-    return true;
+
+  hasDeleteAccess(scope?: ScopeEnum) {
+    return (
+      scope &&
+      (this._roles.includes(AccountRole.Admin) ||
+        (this._roles.includes(AccountRole.Api) &&
+          scope === ScopeEnum.PageAccessToken))
+    );
   }
 }
 
@@ -183,45 +262,73 @@ export class Account extends AccountRead {
  * Returns the current user.
  */
 export const useQueryMe = () =>
-  useQuery({
-    queryKey: queryKeyAccountMe,
-    disableAutoRefresh: true,
-    retry: 0,
-    queryFn: React.useCallback(
-      async () => axiosGet<Account>(URL_ACCOUNTS_ME),
+  useQuery(
+    React.useMemo(
+      () => ({
+        queryKey: queryKeyAccountMe,
+        disableAutoRefresh: true,
+        retry: 0,
+        queryFn: async () => axiosGet<Account>(URL_ACCOUNTS_ME),
+        select: (data: Account) => new Account(data),
+      }),
       []
-    ),
-    select: React.useCallback((data: Account) => new Account(data), []),
-  });
+    )
+  );
 
 /**
  * Returns all accounts.
  */
 export const useQueryAccounts = (props: ChildQueryOptions) =>
-  useQuery({
-    queryKey: queryKeyAccounts,
-    queryFn: React.useCallback(
-      async () => axiosGet<Account[]>(URL_ACCOUNTS),
-      []
-    ),
-    select: React.useCallback(
-      (data: Account[]) => data.map((x) => new Account(x)),
-      []
-    ),
-    metaInfo: META_INFO,
-    scope: props.scope,
-  });
+  useQuery(
+    React.useMemo(
+      () => ({
+        queryKey: queryKeyAccounts,
+        queryFn: async () => axiosGet<Account[]>(URL_ACCOUNTS),
+        select: (data: Account[]) => data.map((x) => new Account(x)),
+        metaInfo: META_INFO,
+        scope: props.scope,
+      }),
+      [props]
+    )
+  );
+/*
+ * Returns the account that matches the given props.rowId.
+ */
+export const useQueryAccountById = (props: ChildQueryOptions) => {
+  const url = React.useMemo(
+    () => `${URL_ACCOUNTS}/${props.rowId}`,
+    [props.rowId]
+  );
+  const queryKey = React.useMemo(
+    () => (props.rowId ? [...queryKeyAccounts, props.rowId] : []),
+    [props.rowId]
+  );
+  return useQuery(
+    React.useMemo(
+      () => ({
+        queryKey: queryKey,
+        queryFn: async () => axiosGet<Account>(url),
+        select: (data: Account) => new Account(data),
+        enabled: !!props.rowId,
+        metaInfo: META_INFO,
+        scope: props.scope,
+      }),
+      [props.rowId, url, props.scope, queryKey]
+    )
+  );
+};
 
 /**
  * Returns all accounts.
  */
 export const useDeleteAccount = () =>
-  useDeleteMutation({
-    mutationFn: React.useCallback(
-      async (data: any) => axiosDelete(`${URL_ACCOUNTS}/${data}`),
+  useDeleteMutation(
+    React.useMemo(
+      () => ({
+        mutationFn: async (data: any) => axiosDelete(`${URL_ACCOUNTS}/${data}`),
+        onSuccess: () =>
+          queryClient.invalidateQueries({ queryKey: queryKeyAccounts }),
+      }),
       []
-    ),
-    onSuccess: React.useCallback(() => {
-      queryClient.invalidateQueries({ queryKey: queryKeyAccounts });
-    }, []),
-  });
+    )
+  );

@@ -26,7 +26,7 @@ import DataGrid from "../components/data/DataGrid";
 import { DetailsDialogMode, ScopeEnum } from "../utils/globals";
 import { useDefaultDataGridRowActions } from "../utils/hooks/mui/useDefaultDataGridRowActions";
 import { useDetailsDialog } from "../utils/hooks/mui/useDetailsDialog";
-import AccessTokenDetailsDialog from "./dialogs/account/AccessTokenDetailsDialog";
+import AccountDetailsDialog from "./dialogs/account/AccountDetailsDialog";
 
 const Accounts = React.memo(() => {
   // We obtain the current user's data.
@@ -36,7 +36,7 @@ const Accounts = React.memo(() => {
     React.useMemo(() => ({ scope: ScopeEnum.DataGridAccount }), [])
   );
   // We obtain the context to open the details dialog for adding new or editing/viewing existing access tokens.
-  const detailsDialogContext = useDetailsDialog(
+  const { onOpen, ...detailsDialogContext } = useDetailsDialog(
     React.useMemo(() => ({ name: "Account" }), [])
   );
   // We obtain the default row actions for the DataGrid.
@@ -47,7 +47,7 @@ const Accounts = React.memo(() => {
         queryContext,
         view: {
           onClick: (params) => {
-            detailsDialogContext.onOpen({
+            onOpen({
               rowId: params.id,
               mode: DetailsDialogMode.View,
               open: true,
@@ -56,7 +56,7 @@ const Accounts = React.memo(() => {
         },
         edit: {
           onClick: (params) => {
-            detailsDialogContext.onOpen({
+            onOpen({
               rowId: params.id,
               mode: DetailsDialogMode.Edit,
               open: true,
@@ -64,7 +64,7 @@ const Accounts = React.memo(() => {
           },
         },
       }),
-      [me, detailsDialogContext, queryContext]
+      [me, onOpen, queryContext]
     )
   );
   // We obtain the DataGrid configuration.
@@ -76,7 +76,7 @@ const Accounts = React.memo(() => {
 
   return (
     <>
-      <AccessTokenDetailsDialog context={detailsDialogContext} />
+      <AccountDetailsDialog context={detailsDialogContext} />
       <DataGrid {...dataGrid} />
     </>
   );

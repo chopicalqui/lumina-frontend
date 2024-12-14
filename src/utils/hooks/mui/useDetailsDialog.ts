@@ -40,8 +40,11 @@ interface UseDetailsDialogState extends UseDetailsDialogOptions, DialogProps {
   mode?: DetailsDialogMode;
 }
 
-export interface UseDetailsDialogResult extends UseDetailsDialogState {
+export interface DetailsDialogOptions extends UseDetailsDialogState {
   onClose: () => void;
+}
+
+export interface UseDetailsDialogResult extends DetailsDialogOptions {
   onOpen: (props: OnOpenOptions) => void;
 }
 

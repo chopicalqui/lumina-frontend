@@ -63,6 +63,7 @@ export interface DialogOptions extends DialogProps {
  */
 const Dialog = React.memo((props: DialogOptions) => {
   const { name, buttons, toolbarItems, onClose, children, ...context } = props;
+
   return (
     <Portal container={document.getElementById("dialog")}>
       <MuiDialog {...context} TransitionComponent={Transition}>

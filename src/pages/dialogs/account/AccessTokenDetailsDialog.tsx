@@ -20,12 +20,47 @@
  */
 
 import React from "react";
-import { UseDetailsDialogResult } from "../../../utils/hooks/mui/useDetailsDialog";
+import { DetailsDialogOptions } from "../../../utils/hooks/mui/useDetailsDialog";
 import DetailsDialog from "../../../components/feedback/dialogs/DetailsDialog";
+import { useControlFactory } from "../../../utils/hooks/mui/useControlFactory";
+import { useQueryAccessTokenById } from "../../../models/account/access_token";
+import ControlFactory from "../../../components/inputs/ControlFactory";
+import { Grid2 as Grid, Paper } from "@mui/material";
 
 const AccessTokenDetailsDialog = React.memo(
-  ({ context }: { context: UseDetailsDialogResult }) => {
-    return <DetailsDialog {...context} maxWidth="xl" fullWidth />;
+  ({ context }: { context: DetailsDialogOptions }) => {
+    // Obtain the access token by ID.
+    const queryContext = useQueryAccessTokenById(
+      React.useMemo(
+        () => ({
+          rowId: context.rowId,
+        }),
+        [context.rowId]
+      )
+    );
+    // Obtain the control factory context.
+    const controlContext = useControlFactory(queryContext.metaInfo);
+
+    return (
+      <DetailsDialog {...context} maxWidth="sm" fullWidth>
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <ControlFactory field="name" context={controlContext} />
+            </Grid>
+            <Grid size={12}>
+              <ControlFactory field="revoked" context={controlContext} />
+            </Grid>
+            <Grid size={12}>
+              <ControlFactory field="expiration" context={controlContext} />
+            </Grid>
+            <Grid size={12}>
+              <ControlFactory field="created_at" context={controlContext} />
+            </Grid>
+          </Grid>
+        </Paper>
+      </DetailsDialog>
+    );
   }
 );
 

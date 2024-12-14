@@ -21,11 +21,7 @@
 
 import React from "react";
 import { ModelBase } from "../common";
-import {
-  MetaInfoType,
-  AutoCompleteOption,
-  formatTimestampToUTC,
-} from "../../utils/globals";
+import { AutoCompleteOption, formatTimestampToUTC } from "../../utils/globals";
 import {
   ChildQueryOptions,
   useQuery,
@@ -34,6 +30,7 @@ import { queryKeyAccessTokens, URL_ME_ACCESS_TOKENS } from "./common";
 import { axiosDelete, axiosGet } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
+import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 
 export const META_INFO: MetaInfoType[] = [
   {
@@ -53,6 +50,16 @@ export const META_INFO: MetaInfoType[] = [
       description: "The name associated with the JWT.",
       editable: true,
     },
+    mui: {
+      textfield: {
+        field: "name",
+        label: "Access Token Name",
+        required: true,
+        disabled: false,
+        noSubmit: false,
+        helperText: "The name associated with the JWT.",
+      },
+    },
   },
   {
     dataGridInfo: {
@@ -60,6 +67,12 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Revoked",
       type: "boolean",
       description: "Whether the JWT is revoked or not.",
+    },
+    mui: {
+      switch: {
+        field: "revoked",
+        label: "Revoked",
+      },
     },
   },
   {
@@ -69,13 +82,31 @@ export const META_INFO: MetaInfoType[] = [
       type: "dateTime",
       description: "The date when the JWT expires.",
     },
+    mui: {
+      datapicker: {
+        field: "expiration",
+        label: "Expiration",
+        required: true,
+        disablePast: true,
+        helperText: "The date when the JWT expires.",
+      },
+    },
   },
   {
     dataGridInfo: {
       field: "created_at",
-      headerName: "Last Login",
+      headerName: "Created At",
       type: "dateTime",
       description: "The date when the JWT was created.",
+    },
+    mui: {
+      datapicker: {
+        field: "created_at",
+        label: "Created At",
+        disabled: true,
+        disablePast: true,
+        helperText: "The date when the JWT was created.",
+      },
     },
   },
 ];
@@ -101,30 +132,58 @@ export class AccessToken extends ModelBase {
  * Returns the current user's access tokens.
  */
 export const useQueryAccessTokens = (props: ChildQueryOptions) =>
-  useQuery({
-    queryKey: queryKeyAccessTokens,
-    queryFn: React.useCallback(
-      async () => axiosGet<AccessToken[]>(URL_ME_ACCESS_TOKENS),
-      []
-    ),
-    select: React.useCallback(
-      (data: AccessToken[]) => data.map(() => new AccessToken(data)),
-      []
-    ),
-    metaInfo: META_INFO,
-    scope: props.scope,
-  });
+  useQuery(
+    React.useMemo(
+      () => ({
+        queryKey: queryKeyAccessTokens,
+        queryFn: async () => axiosGet<AccessToken[]>(URL_ME_ACCESS_TOKENS),
+        select: (data: AccessToken[]) => data.map(() => new AccessToken(data)),
+        metaInfo: META_INFO,
+        scope: props.scope,
+      }),
+      [props]
+    )
+  );
+
+/*
+ * Returns the access token that matches the given props.rowId.
+ */
+export const useQueryAccessTokenById = (props: ChildQueryOptions) => {
+  const url = React.useMemo(
+    () => `${URL_ME_ACCESS_TOKENS}/${props.rowId}`,
+    [props.rowId]
+  );
+  const queryKey = React.useMemo(
+    () => (props.rowId ? [...queryKeyAccessTokens, props.rowId] : []),
+    [props.rowId]
+  );
+  return useQuery(
+    React.useMemo(
+      () => ({
+        queryKey: queryKey,
+        queryFn: async () => axiosGet<AccessToken>(url),
+        select: (data: AccessToken) => new AccessToken(data),
+        enabled: !!props.rowId,
+        metaInfo: META_INFO,
+        scope: props.scope,
+      }),
+      [props.rowId, url, props.scope, queryKey]
+    )
+  );
+};
 
 /**
  * Delete's the access token with the given ID.
  */
 export const useDeleteAccessTokens = () =>
-  useDeleteMutation({
-    mutationFn: React.useCallback(
-      async (data: any) => axiosDelete(`${URL_ME_ACCESS_TOKENS}/${data}`),
+  useDeleteMutation(
+    React.useMemo(
+      () => ({
+        mutationFn: async (data: any) =>
+          axiosDelete(`${URL_ME_ACCESS_TOKENS}/${data}`),
+        onSuccess: () =>
+          queryClient.invalidateQueries({ queryKey: queryKeyAccessTokens }),
+      }),
       []
-    ),
-    onSuccess: React.useCallback(() => {
-      queryClient.invalidateQueries({ queryKey: queryKeyAccessTokens });
-    }, []),
-  });
+    )
+  );

@@ -19,22 +19,28 @@
  * @license GPLv3
  */
 
-import "dayjs/locale/en-gb";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { queryClient } from "./utils/consts";
-import "./index.css";
-import App from "./App.tsx";
+import React from "react";
+import {
+  Switch as MuiSwitch,
+  SwitchProps as MuiSwitchProps,
+  FormControlLabel,
+} from "@mui/material";
+import { LuminaControlOptions } from "./common";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
-        <App />
-      </LocalizationProvider>
-    </QueryClientProvider>
-  </StrictMode>
-);
+export interface SwitchOptions extends LuminaControlOptions, MuiSwitchProps {
+  label: string;
+}
+
+const Switch: React.FC<SwitchOptions> = React.memo((props) => {
+  const { label } = props;
+  const sx = React.useMemo(() => ({ width: "100%", ...props.sx }), [props.sx]);
+  return (
+    <FormControlLabel
+      control={<MuiSwitch {...props} sx={sx} />}
+      labelPlacement="top"
+      label={label}
+    />
+  );
+});
+
+export default Switch;

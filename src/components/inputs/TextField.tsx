@@ -19,22 +19,30 @@
  * @license GPLv3
  */
 
-import "dayjs/locale/en-gb";
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { queryClient } from "./utils/consts";
-import "./index.css";
-import App from "./App.tsx";
+import React from "react";
+import { TextField as MuiTextField, TextFieldProps } from "@mui/material";
+import { LuminaControlOptions } from "./common";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
-        <App />
-      </LocalizationProvider>
-    </QueryClientProvider>
-  </StrictMode>
-);
+export type TextFieldOptions = LuminaControlOptions & TextFieldProps;
+
+/**
+ * Text area input control that can be created by the ControlFactory component.
+ */
+const TextField: React.FC<TextFieldProps> = React.memo((props) => {
+  const { label, ...textFieldProps } = props;
+  const sx = React.useMemo(
+    () => ({ width: "100%", ...textFieldProps.sx }),
+    [textFieldProps.sx]
+  );
+
+  return (
+    <MuiTextField
+      {...textFieldProps}
+      sx={sx}
+      label={label}
+      hiddenLabel={!label}
+    />
+  );
+});
+
+export default TextField;

@@ -22,7 +22,7 @@
 import React from "react";
 import Dialog, { DialogOptions } from "./Dialog";
 import { DetailsDialogMode } from "../../../utils/globals";
-import { Button } from "@mui/material";
+import { Button, styled } from "@mui/material";
 import { useConfirmDialog } from "../../../utils/hooks/mui/useConfirmDialog";
 import ConfirmationDialog from "./ConfirmDialog";
 
@@ -33,6 +33,11 @@ export interface DetailsDialogOptions extends DialogOptions {
   // The mode of the dialog.
   mode?: DetailsDialogMode;
 }
+
+export const Item = styled("div")(({ theme }) => ({
+  padding: theme.spacing(1),
+  width: "100%",
+}));
 
 /**
  * This component is the default dialog that is used to display details about a DataGrid entry.

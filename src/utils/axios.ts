@@ -35,6 +35,23 @@ export const axiosGet = async <T>(
   axiosClient.get<T>(url, config).then((response) => response.data);
 
 /**
+ * This function is used to issue a GET request to the server.
+ */
+export const axiosGetWithCsrf = async <T>(
+  url: string,
+  config?: AxiosRequestConfig<any> | undefined
+): Promise<T> => {
+  const headers = { ...(config?.headers ?? {}) };
+  const token = getCookieValue(CSRF_TOKEN_HEADER);
+  if (token) {
+    headers[CSRF_TOKEN_HEADER] = token;
+  }
+  return axiosClient
+    .get<T>(url, { ...config, headers })
+    .then((response) => response.data);
+};
+
+/**
  * This function is used to issue a POST request to the server.
  */
 export const axiosPost = async <T>(

@@ -20,12 +20,64 @@
  */
 
 import React from "react";
-import { UseDetailsDialogResult } from "../../../utils/hooks/mui/useDetailsDialog";
-import DetailsDialog from "../../../components/feedback/dialogs/DetailsDialog";
+import { DetailsDialogOptions } from "../../../utils/hooks/mui/useDetailsDialog";
+import DetailsDialog, {
+  Item,
+} from "../../../components/feedback/dialogs/DetailsDialog";
+import { useQueryAccountById } from "../../../models/account/account";
+import { useControlFactory } from "../../../utils/hooks/mui/useControlFactory";
+import { Grid2 as Grid, Paper } from "@mui/material";
+import ControlFactory from "../../../components/inputs/ControlFactory";
 
 const AccountDetailsDialog = React.memo(
-  ({ context }: { context: UseDetailsDialogResult }) => {
-    return <DetailsDialog {...context} maxWidth="xl" fullWidth />;
+  ({ context }: { context: DetailsDialogOptions }) => {
+    const { rowId, ...props } = context;
+    // Obtain the access token by ID.
+    const queryContext = useQueryAccountById(
+      React.useMemo(
+        () => ({
+          rowId,
+        }),
+        [rowId]
+      )
+    );
+    // Obtain the control factory context.
+    const controlContext = useControlFactory(queryContext.metaInfo);
+
+    return (
+      <DetailsDialog {...props} maxWidth="md" fullWidth>
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Grid container spacing={2}>
+            <Grid size={6}>
+              <ControlFactory field="name" context={controlContext} />
+            </Grid>
+            <Grid size={6}>
+              <ControlFactory field="email" context={controlContext} />
+            </Grid>
+            <Grid size={8}>
+              <Item>roles</Item>
+            </Grid>
+            <Grid size={4}>
+              <ControlFactory field="lastLogin" context={controlContext} />
+            </Grid>
+          </Grid>
+        </Paper>
+
+        <Paper sx={{ p: 2 }}>
+          <Grid container spacing={2}>
+            <Grid size={2}>
+              <ControlFactory field="locked" context={controlContext} />
+            </Grid>
+            <Grid size={5}>
+              <ControlFactory field="activeFrom" context={controlContext} />
+            </Grid>
+            <Grid size={5}>
+              <ControlFactory field="activeUntil" context={controlContext} />
+            </Grid>
+          </Grid>
+        </Paper>
+      </DetailsDialog>
+    );
   }
 );
 
