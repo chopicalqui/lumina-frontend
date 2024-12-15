@@ -48,7 +48,7 @@ const AccessTokens = React.memo(() => {
     )
   );
   // We obtain the context to open the details dialog for adding new or editing/viewing existing access tokens.
-  const detailsDialogContext = useDetailsDialog(
+  const { onOpen, ...detailsDialogContext } = useDetailsDialog(
     React.useMemo(() => ({ name: "Access Token" }), [])
   );
   // We obtain the Tanstack mutation to allow deleting access tokens.
@@ -68,7 +68,7 @@ const AccessTokens = React.memo(() => {
         },
         view: {
           onClick: (params) => {
-            detailsDialogContext.onOpen({
+            onOpen({
               rowId: params.id,
               mode: DetailsDialogMode.View,
               open: true,
@@ -77,7 +77,7 @@ const AccessTokens = React.memo(() => {
         },
         edit: {
           onClick: (params) => {
-            detailsDialogContext.onOpen({
+            onOpen({
               rowId: params.id,
               mode: DetailsDialogMode.Edit,
               open: true,
@@ -85,7 +85,7 @@ const AccessTokens = React.memo(() => {
           },
         },
       }),
-      [detailsDialogContext, showConfirmDeleteDialog, me, queryContext]
+      [onOpen, showConfirmDeleteDialog, me, queryContext]
     )
   );
   // We obtain the DataGrid configuration.
@@ -95,11 +95,11 @@ const AccessTokens = React.memo(() => {
     rowActions,
     onCreateButtonClick: React.useCallback(
       () =>
-        detailsDialogContext.onOpen({
+        onOpen({
           mode: DetailsDialogMode.Add,
           open: true,
         }),
-      [detailsDialogContext]
+      [onOpen]
     ),
   });
 
@@ -109,7 +109,10 @@ const AccessTokens = React.memo(() => {
         {...(confirmDeleteDialogOptions as ConfirmationDialogOptions)}
         mutation={mutateDelete}
       />
-      <AccessTokenDetailsDialog context={detailsDialogContext} />
+      {/* We newly mount the AccountDetailsDialog component each time to ensure the account data is newly fetched from the backend. */}
+      {detailsDialogContext.open && (
+        <AccessTokenDetailsDialog context={detailsDialogContext} />
+      )}
       <DataGrid {...dataGrid} />
     </>
   );

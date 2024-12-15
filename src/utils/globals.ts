@@ -19,6 +19,11 @@
  * @license GPLv3
  */
 
+import dayjs from "dayjs";
+
+// Define a model class type with a constructor
+export type ClassType<T> = new (...args: any[]) => T;
+
 /**
  * This type is used to define the auto-complete options in the application.
  */
@@ -85,19 +90,24 @@ export const getAutoCompleteOption = (
 };
 
 /**
- * Formats an ISO 8601 timestamp by truncating fractional seconds to three digits
- * (milliseconds) and appends a "Z" to indicate UTC time.
- *
- * @param {string} timestamp - The ISO 8601 timestamp to format (e.g., "2024-11-23T12:34:56.123456").
- * @returns {string} - The formatted timestamp with milliseconds truncated to three digits and "Z" appended (e.g., "2024-11-23T12:34:56.123Z").
+ * This function is used to get the value of an auto-complete field.
  */
-export const formatTimestampToUTC = (timestamp: string): Date | undefined => {
-  let result: Date | undefined = undefined;
-  if (timestamp && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+/.test(timestamp)) {
-    result = new Date(timestamp.replace(/(\.\d{3})\d*/, "$1") + "Z");
-  }
-  return result;
-};
+export const valueGetterAutoCompleteOption = (
+  value: AutoCompleteOption
+): string => value.label;
+
+/**
+ * This function is used to get the value of an auto-complete list.
+ */
+export const valueGetterAutoCompleteOptionList = (
+  value: AutoCompleteOption[]
+): string[] => value.map((x) => x.label);
+
+/**
+ * This function is used to get the value of a date field.
+ */
+export const valueGetterDate = (value?: dayjs.Dayjs): Date | undefined =>
+  value?.toDate();
 
 /**
  * Returns the value of a cookie by its name.

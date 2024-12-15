@@ -76,7 +76,10 @@ const Accounts = React.memo(() => {
 
   return (
     <>
-      <AccountDetailsDialog context={detailsDialogContext} />
+      {/* We newly mount the AccountDetailsDialog component each time to ensure the account data is newly fetched from the backend. */}
+      {detailsDialogContext.open && (
+        <AccountDetailsDialog context={detailsDialogContext} />
+      )}
       <DataGrid {...dataGrid} />
     </>
   );

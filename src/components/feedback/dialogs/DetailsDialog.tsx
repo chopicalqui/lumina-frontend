@@ -22,7 +22,7 @@
 import React from "react";
 import Dialog, { DialogOptions } from "./Dialog";
 import { DetailsDialogMode } from "../../../utils/globals";
-import { Button, styled } from "@mui/material";
+import { Button, CircularProgress, styled } from "@mui/material";
 import { useConfirmDialog } from "../../../utils/hooks/mui/useConfirmDialog";
 import ConfirmationDialog from "./ConfirmDialog";
 
@@ -32,6 +32,8 @@ import ConfirmationDialog from "./ConfirmDialog";
 export interface DetailsDialogOptions extends DialogOptions {
   // The mode of the dialog.
   mode?: DetailsDialogMode;
+  // Instructs the dialog to display a loading spinner.
+  isLoading?: boolean;
 }
 
 export const Item = styled("div")(({ theme }) => ({
@@ -43,7 +45,7 @@ export const Item = styled("div")(({ theme }) => ({
  * This component is the default dialog that is used to display details about a DataGrid entry.
  */
 const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
-  const { mode, name, onClose, ...context } = props;
+  const { mode, name, onClose, isLoading, ...context } = props;
   const { showDialog, ...confirmDialogOptions } = useConfirmDialog();
   const title = React.useMemo(() => {
     switch (mode) {
@@ -65,6 +67,12 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
       }),
     [showDialog, onClose]
   );
+
+  const toolbarItems = React.useMemo(() => {
+    if (isLoading) {
+      return [<CircularProgress key="cicular-progress" />];
+    }
+  }, [isLoading]);
 
   const buttons = React.useMemo(() => {
     switch (mode) {
@@ -104,7 +112,13 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
   return (
     <>
       <ConfirmationDialog {...confirmDialogOptions} />
-      <Dialog {...context} name={title} onClose={onClose} buttons={buttons} />
+      <Dialog
+        {...context}
+        name={title}
+        onClose={onCancel}
+        buttons={buttons}
+        toolbarItems={toolbarItems}
+      />
     </>
   );
 });

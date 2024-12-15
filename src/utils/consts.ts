@@ -50,6 +50,7 @@ export const ORG_URL = "https://lumina.com";
 export const ORG_LOGO = "/logo.svg";
 export const API_PATH_PREFIX = "/api";
 export const CSRF_TOKEN_HEADER = "X-Token";
+export const ADAPTER_LOCALE = "en-gb";
 
 export const axiosClient = Axios.create({
   baseURL: API_PATH_PREFIX,

@@ -101,6 +101,7 @@ const ControlFactory = React.memo(
       return (
         <DatePicker
           {...props}
+          value={fieldValue as dayjs.Dayjs}
           error={fieldState.errorText !== undefined}
           helperText={fieldState.errorText || helperText}
           onChange={onChangeDatePicker}

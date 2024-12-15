@@ -32,6 +32,7 @@ import {
   OnChangeOptionsType,
   StateValueType,
 } from "../../../components/inputs/controlFactoryUtils";
+import { UseQueryForDataGridResult } from "../tanstack/useQuery";
 
 /**
  * Creates the initial state for the control factory.
@@ -79,6 +80,21 @@ const controlFactoryReducer = (
   if (action === "ON_CHANGE" || action === "ON_BLUR") {
     const result = handleOnChangeBlur(state, options);
     return result;
+  } else if (action === "UPDATE_VALUES") {
+    if (!options.updateValuesOptions) {
+      throw new Error("The updateValuesOptions are missing.");
+    }
+    const result: StateValueType = {};
+    const { content } = options.updateValuesOptions;
+    Object.keys(state.columns).forEach((field) => {
+      if (field in content) {
+        result[field] = content[field];
+      }
+    });
+    return {
+      ...state,
+      values: { ...state.values, ...content, ...result },
+    };
   }
   return { ...state };
 };
@@ -86,14 +102,17 @@ const controlFactoryReducer = (
 /**
  * Hook to use a control factory.
  */
-export const useControlFactory = (
-  metaInfo: MetaInfoType[]
+export const useControlFactory = <T>(
+  metaInfo: MetaInfoType[],
+  queryContext?: UseQueryForDataGridResult<T>
 ): UseControlFactoryResult => {
   const initialState = useInitialState(metaInfo);
   const [state, dispatch] = React.useReducer(
     controlFactoryReducer,
     initialState
   );
+  const isSuccess = queryContext?.isSuccess === true;
+  const content = queryContext?.data;
 
   /**
    * The onChange event handler for input controls.
@@ -130,6 +149,16 @@ export const useControlFactory = (
       }),
     []
   );
+
+  // Update the values when the query context is successful.
+  React.useEffect(() => {
+    if (isSuccess) {
+      dispatch({
+        action: "UPDATE_VALUES",
+        updateValuesOptions: { content },
+      });
+    }
+  }, [isSuccess, content]);
 
   return React.useMemo(
     () => ({ state, onChange, onBlur, updateValues }),

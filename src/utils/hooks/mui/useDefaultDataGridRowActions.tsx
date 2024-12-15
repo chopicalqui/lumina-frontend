@@ -32,7 +32,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import { Account } from "../../../models/account/account";
-import { ScopeEnum } from "../../globals";
 import { UseQueryForDataGridResult } from "../tanstack/useQuery";
 
 /**
@@ -43,9 +42,6 @@ export interface UseDefaultDataGridActionsOptions<T> {
   me?: Account;
   // The properties of the useQuery hook.
   queryContext: UseQueryForDataGridResult<T>;
-  // The id of the current DataGrid. This is used to store the DataGrid's configuration in the local storage and
-  // save custom filters in the backend.
-  scope?: ScopeEnum;
   // If present, the DataGrid will have an action to view the current row.
   view?: {
     title?: string;
@@ -73,12 +69,13 @@ export const useDefaultDataGridRowActions = <T,>(
 ): GridActionsColDef => {
   const {
     me,
-    scope,
     view,
     edit,
+    queryContext,
     delete: rawDelete,
     customActions: rawCustomActions,
   } = props;
+  const scope = queryContext.scope;
   const result = React.useCallback(
     (
       params: GridRowParams<GridValidRowModel>

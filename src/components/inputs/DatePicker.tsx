@@ -48,6 +48,7 @@ const DatePicker = React.memo((props: DatePickerOptions<any>) => {
   const theme = useTheme();
   const { required, label, error, helperText, readOnly, ...other } = props;
   const datePickerLabel = required ? label + " *" : label;
+  // TODO: error flag does not change color
   const sx = React.useMemo(
     () => ({
       minWidth: "100%",

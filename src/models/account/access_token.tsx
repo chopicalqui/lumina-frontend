@@ -21,16 +21,16 @@
 
 import React from "react";
 import { ModelBase } from "../common";
-import { AutoCompleteOption, formatTimestampToUTC } from "../../utils/globals";
-import {
-  ChildQueryOptions,
-  useQuery,
-} from "../../utils/hooks/tanstack/useQuery";
+import { AutoCompleteOption, valueGetterDate } from "../../utils/globals";
+import { ChildQueryOptions } from "../../utils/hooks/tanstack/useQuery";
 import { queryKeyAccessTokens, URL_ME_ACCESS_TOKENS } from "./common";
-import { axiosDelete, axiosGet } from "../../utils/axios";
+import { axiosDelete } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
+import dayjs from "dayjs";
+import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
+import { useQueryItemById } from "../../utils/hooks/tanstack/useQueryItemById";
 
 export const META_INFO: MetaInfoType[] = [
   {
@@ -81,6 +81,7 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Expiration",
       type: "dateTime",
       description: "The date when the JWT expires.",
+      valueGetter: valueGetterDate,
     },
     mui: {
       datapicker: {
@@ -98,6 +99,7 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Created At",
       type: "dateTime",
       description: "The date when the JWT was created.",
+      valueGetter: valueGetterDate,
     },
     mui: {
       datapicker: {
@@ -114,17 +116,17 @@ export const META_INFO: MetaInfoType[] = [
 export class AccessToken extends ModelBase {
   public name: string | null;
   public revoked: boolean;
-  public expiration: Date;
+  public expiration: dayjs.Dayjs;
   public scope: AutoCompleteOption[];
-  public created_at: Date | undefined;
+  public created_at?: dayjs.Dayjs;
 
   constructor(data: any) {
     super(data.id);
     this.name = data.name;
     this.revoked = data.revoked;
-    this.expiration = data.expiration;
+    this.expiration = dayjs(data.expiration);
     this.scope = data.scope;
-    this.created_at = formatTimestampToUTC(data.created_at);
+    this.created_at = dayjs(data.created_at);
   }
 }
 
@@ -132,45 +134,26 @@ export class AccessToken extends ModelBase {
  * Returns the current user's access tokens.
  */
 export const useQueryAccessTokens = (props: ChildQueryOptions) =>
-  useQuery(
-    React.useMemo(
-      () => ({
-        queryKey: queryKeyAccessTokens,
-        queryFn: async () => axiosGet<AccessToken[]>(URL_ME_ACCESS_TOKENS),
-        select: (data: AccessToken[]) => data.map(() => new AccessToken(data)),
-        metaInfo: META_INFO,
-        scope: props.scope,
-      }),
-      [props]
-    )
+  useQueryItems(
+    AccessToken,
+    queryKeyAccessTokens,
+    URL_ME_ACCESS_TOKENS,
+    META_INFO,
+    props.scope
   );
 
 /*
  * Returns the access token that matches the given props.rowId.
  */
-export const useQueryAccessTokenById = (props: ChildQueryOptions) => {
-  const url = React.useMemo(
-    () => `${URL_ME_ACCESS_TOKENS}/${props.rowId}`,
-    [props.rowId]
+export const useQueryAccessTokenById = (props: ChildQueryOptions) =>
+  useQueryItemById(
+    AccessToken,
+    queryKeyAccessTokens,
+    URL_ME_ACCESS_TOKENS,
+    META_INFO,
+    props?.rowId,
+    props.scope
   );
-  const queryKey = React.useMemo(
-    () => (props.rowId ? [...queryKeyAccessTokens, props.rowId] : []),
-    [props.rowId]
-  );
-  return useQuery(
-    React.useMemo(
-      () => ({
-        queryKey: queryKey,
-        queryFn: async () => axiosGet<AccessToken>(url),
-        select: (data: AccessToken) => new AccessToken(data),
-        enabled: !!props.rowId,
-        metaInfo: META_INFO,
-        scope: props.scope,
-      }),
-      [props.rowId, url, props.scope, queryKey]
-    )
-  );
-};
 
 /**
  * Delete's the access token with the given ID.

@@ -19,9 +19,6 @@
  * @license GPLv3
  */
 
-import { Dayjs } from "dayjs";
-import { GetErrorOptions } from "../../components/inputs/common";
-
 // Query keys for accounts
 export const queryKeyAccounts = ["accounts"];
 export const queryKeyAccountMe = ["me"];
@@ -56,41 +53,3 @@ export const URL_DATAGRID_SETTINGS_RESET = URL_DATAGRID_SETTINGS + "/reset";
 export const URL_ME_NOTIFICATIONS = URL_ACCOUNTS_ME + "/notifications";
 // Access tokens
 export const URL_ME_ACCESS_TOKENS = URL_ACCOUNTS_ME + "/access-tokens";
-
-/**
- * Default input validation for text fields.
- */
-export const verifyTextFieldDefault = (props: GetErrorOptions) => {
-  const { value, label, required } = props;
-  if (required && !value) {
-    throw new Error(`${label} is required.`);
-  }
-};
-
-export const verifyDatePickerDefault = (props: GetErrorOptions) => {
-  const { value, label, required } = props;
-  console.log(value);
-  if (required && !value) {
-    throw new Error(`${label} is required.`);
-  }
-  if ((value as Dayjs)?.isValid() === false) {
-    throw new Error(`${label} is not a valid date.`);
-  }
-};
-
-/**
- * Input validation for email addresses.
- */
-export const verifyEmail = (props: GetErrorOptions) => {
-  const { value, label } = props;
-  // Perform the default validation
-  verifyTextFieldDefault(props);
-  if (
-    value &&
-    !(value as string).match(/^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i)
-  ) {
-    throw new Error(
-      `${label?.toString().toLowerCase()} is not a valid email address.`
-    );
-  }
-};

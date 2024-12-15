@@ -29,7 +29,7 @@ import { Dayjs } from "dayjs";
 import {
   verifyTextFieldDefault,
   verifyDatePickerDefault,
-} from "../../models/account/common";
+} from "../../models/common";
 
 /**
  * The different states an input control can have.

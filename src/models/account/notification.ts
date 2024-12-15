@@ -19,7 +19,7 @@
  * @license GPLv3
  */
 
-import { formatTimestampToUTC } from "../../utils/globals";
+import dayjs from "dayjs";
 import { NamedModelBase } from "../common";
 
 /**
@@ -27,13 +27,13 @@ import { NamedModelBase } from "../common";
  */
 export class Notification extends NamedModelBase {
   public message: string;
-  public date: Date | undefined;
+  public date?: dayjs.Dayjs;
   public read: boolean;
 
   constructor(notificationData: any) {
     super(notificationData.subject, notificationData.id);
     this.message = notificationData.message;
-    this.date = formatTimestampToUTC(notificationData.created_at);
+    this.date = dayjs(notificationData.created_at);
     this.read = notificationData.read;
   }
 }

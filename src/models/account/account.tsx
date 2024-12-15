@@ -22,28 +22,31 @@
 import React from "react";
 import { Link } from "@mui/material";
 import {
-  formatTimestampToUTC,
   getAutoCompleteOption,
   ScopeEnum,
   AccountRole,
   getEnumNames,
+  valueGetterAutoCompleteOptionList,
+  valueGetterDate,
 } from "../../utils/globals";
 import {
   ChildQueryOptions,
   useQuery,
 } from "../../utils/hooks/tanstack/useQuery";
-import { NamedModelBase } from "../common";
+import { NamedModelBase, verifyEmail } from "../common";
 import {
   queryKeyAccounts,
   queryKeyAccountMe,
   URL_ACCOUNTS,
   URL_ACCOUNTS_ME,
-  verifyEmail,
 } from "./common";
 import { axiosDelete, axiosGet } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
+import dayjs from "dayjs";
+import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
+import { useQueryItemById } from "../../utils/hooks/tanstack/useQueryItemById";
 
 export const META_INFO: MetaInfoType[] = [
   {
@@ -117,7 +120,7 @@ export const META_INFO: MetaInfoType[] = [
       description: "The user's role memberships.",
       align: "center",
       headerAlign: "center",
-      valueGetter: (value: any) => value?.map((x: any) => x.label),
+      valueGetter: valueGetterAutoCompleteOptionList,
     },
   },
   {
@@ -126,6 +129,7 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Active From",
       type: "date",
       description: "The date from which onward the account can be used.",
+      valueGetter: valueGetterDate,
     },
     mui: {
       datapicker: {
@@ -143,6 +147,7 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Expires",
       type: "date",
       description: "The date the account expires.",
+      valueGetter: valueGetterDate,
     },
     mui: {
       datapicker: {
@@ -160,6 +165,7 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Last Login",
       type: "dateTime",
       description: "The date [UTC] the user logged in the last time.",
+      valueGetter: valueGetterDate,
     },
     mui: {
       datapicker: {
@@ -188,9 +194,9 @@ export class AccountRead extends NamedModelBase {
   email: string;
   roles: AccountRole[];
   locked: boolean;
-  activeFrom?: Date;
-  activeUntil?: Date;
-  lastLogin?: Date;
+  activeFrom?: dayjs.Dayjs;
+  activeUntil?: dayjs.Dayjs;
+  lastLogin?: dayjs.Dayjs;
 
   constructor(data: any) {
     super(data.full_name, data.id);
@@ -199,9 +205,9 @@ export class AccountRead extends NamedModelBase {
       getAutoCompleteOption(AccountRole, x)
     );
     this.locked = data.locked;
-    this.activeFrom = data.active_from && new Date(data.active_from);
-    this.activeUntil = data.active_until && new Date(data.active_until);
-    this.lastLogin = formatTimestampToUTC(data.last_login);
+    this.activeFrom = data.active_from && dayjs(data.active_from);
+    this.lastLogin = data.active_from && dayjs(data.last_login);
+    this.activeUntil = data.active_until && dayjs(data.active_until);
   }
 }
 
@@ -279,44 +285,26 @@ export const useQueryMe = () =>
  * Returns all accounts.
  */
 export const useQueryAccounts = (props: ChildQueryOptions) =>
-  useQuery(
-    React.useMemo(
-      () => ({
-        queryKey: queryKeyAccounts,
-        queryFn: async () => axiosGet<Account[]>(URL_ACCOUNTS),
-        select: (data: Account[]) => data.map((x) => new Account(x)),
-        metaInfo: META_INFO,
-        scope: props.scope,
-      }),
-      [props]
-    )
+  useQueryItems(
+    Account,
+    queryKeyAccounts,
+    URL_ACCOUNTS,
+    META_INFO,
+    props.scope
   );
+
 /*
  * Returns the account that matches the given props.rowId.
  */
-export const useQueryAccountById = (props: ChildQueryOptions) => {
-  const url = React.useMemo(
-    () => `${URL_ACCOUNTS}/${props.rowId}`,
-    [props.rowId]
+export const useQueryAccountById = (props: ChildQueryOptions) =>
+  useQueryItemById(
+    Account,
+    queryKeyAccounts,
+    URL_ACCOUNTS,
+    META_INFO,
+    props?.rowId,
+    props.scope
   );
-  const queryKey = React.useMemo(
-    () => (props.rowId ? [...queryKeyAccounts, props.rowId] : []),
-    [props.rowId]
-  );
-  return useQuery(
-    React.useMemo(
-      () => ({
-        queryKey: queryKey,
-        queryFn: async () => axiosGet<Account>(url),
-        select: (data: Account) => new Account(data),
-        enabled: !!props.rowId,
-        metaInfo: META_INFO,
-        scope: props.scope,
-      }),
-      [props.rowId, url, props.scope, queryKey]
-    )
-  );
-};
 
 /**
  * Returns all accounts.

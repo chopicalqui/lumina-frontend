@@ -20,6 +20,8 @@
  */
 
 import { AlertColor } from "@mui/material";
+import { GetErrorOptions } from "../components/inputs/common";
+import { Dayjs } from "dayjs";
 
 /*
  * This class is used by all Lumina API model classes to provide a common interface for all Lumina API model classes.
@@ -61,3 +63,44 @@ export class StatusMessage {
     this.message = data.message;
   }
 }
+
+/**
+ * Default input validation for text fields.
+ */
+export const verifyTextFieldDefault = (props: GetErrorOptions) => {
+  const { value, label, required } = props;
+  if (required && !value) {
+    throw new Error(`${label} is required.`);
+  }
+};
+
+/**
+ * Default input validation for date pickers.
+ */
+export const verifyDatePickerDefault = (props: GetErrorOptions) => {
+  const { value, label, required } = props;
+  console.log(value);
+  if (required && !value) {
+    throw new Error(`${label} is required.`);
+  }
+  if ((value as Dayjs)?.isValid() === false) {
+    throw new Error(`${label} is not a valid date.`);
+  }
+};
+
+/**
+ * Input validation for email addresses.
+ */
+export const verifyEmail = (props: GetErrorOptions) => {
+  const { value, label } = props;
+  // Perform the default validation
+  verifyTextFieldDefault(props);
+  if (
+    value &&
+    !(value as string).match(/^([\w.%+-]+)@([\w-]+\.)+([\w]{2,})$/i)
+  ) {
+    throw new Error(
+      `${label?.toString().toLowerCase()} is not a valid email address.`
+    );
+  }
+};

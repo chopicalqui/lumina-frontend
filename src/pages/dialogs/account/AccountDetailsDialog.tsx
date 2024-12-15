@@ -42,10 +42,18 @@ const AccountDetailsDialog = React.memo(
       )
     );
     // Obtain the control factory context.
-    const controlContext = useControlFactory(queryContext.metaInfo);
+    const controlContext = useControlFactory(
+      queryContext.metaInfo,
+      queryContext
+    );
 
     return (
-      <DetailsDialog {...props} maxWidth="md" fullWidth>
+      <DetailsDialog
+        {...props}
+        maxWidth="md"
+        fullWidth
+        isLoading={queryContext.isLoading}
+      >
         <Paper sx={{ p: 2, mb: 2 }}>
           <Grid container spacing={2}>
             <Grid size={6}>
