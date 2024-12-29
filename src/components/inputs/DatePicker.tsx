@@ -23,32 +23,39 @@ import React from "react";
 import { useTheme } from "@mui/material/styles";
 import { DatePicker as MuiDatePicker } from "@mui/x-date-pickers/DatePicker";
 import { DatePickerProps as MuiDatePickerProps } from "@mui/x-date-pickers/DatePicker/DatePicker.types";
-import { PickerValidDate } from "@mui/x-date-pickers";
 import { LuminaControlOptions } from "./common";
 import { Dayjs } from "dayjs";
 
 export type DatePickerProps<
-  TDate extends PickerValidDate,
   TEnableAccessibleFieldDOMStructure extends boolean = false,
-> = MuiDatePickerProps<TDate, TEnableAccessibleFieldDOMStructure> &
+> = MuiDatePickerProps<Dayjs, TEnableAccessibleFieldDOMStructure> &
   React.RefAttributes<HTMLDivElement>;
 
 export interface DatePickerOptions<
   TEnableAccessibleFieldDOMStructure extends boolean = false,
 > extends LuminaControlOptions,
-    DatePickerProps<Dayjs, TEnableAccessibleFieldDOMStructure> {
+    DatePickerProps<TEnableAccessibleFieldDOMStructure> {
   ref?: any;
+  // The input label.
   label: string;
+  // Flag to indicate if the component contains an input error.
   error?: boolean;
+  // Flag to indicate if the component is mandatory.
   required?: boolean;
+  // Helper text to display below the input.
   helperText?: string;
+  // Lost focus handler.
+  onBlur?: (
+    event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>
+  ) => void;
 }
 
 const DatePicker = React.memo((props: DatePickerOptions<any>) => {
   const theme = useTheme();
-  const { required, label, error, helperText, readOnly, ...other } = props;
+  const { required, label, error, helperText, readOnly, onBlur, ...other } =
+    props;
   const datePickerLabel = required ? label + " *" : label;
-  // TODO: error flag does not change color
+
   const sx = React.useMemo(
     () => ({
       minWidth: "100%",
@@ -57,11 +64,14 @@ const DatePicker = React.memo((props: DatePickerOptions<any>) => {
     }),
     [props.sx, error, theme.palette.error.main]
   );
+
   return (
     <MuiDatePicker
       slotProps={{
         textField: {
           helperText,
+          onBlur,
+          error,
         },
       }}
       label={datePickerLabel}

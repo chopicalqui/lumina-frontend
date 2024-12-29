@@ -20,10 +20,22 @@
  */
 
 import React from "react";
-import { ModelBase } from "../common";
-import { AutoCompleteOption, valueGetterDate } from "../../utils/globals";
+import { NamedModelBase } from "../common";
+import {
+  AutoCompleteClass,
+  AutoCompleteOption,
+  getDefaultAutocompleteRenderInput,
+  getFinalAutoCompleteValue,
+  getFinalDayjs,
+  valueGetterDate,
+} from "../../utils/globals";
 import { ChildQueryOptions } from "../../utils/hooks/tanstack/useQuery";
-import { queryKeyAccessTokens, URL_ME_ACCESS_TOKENS } from "./common";
+import {
+  queryKeyAccessTokens,
+  queryKeyScopes,
+  URL_ME_ACCESS_TOKENS,
+  URL_ME_SCOPES,
+} from "./common";
 import { axiosDelete } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
@@ -41,13 +53,20 @@ export const META_INFO: MetaInfoType[] = [
       type: "string",
       hideable: true,
     },
+    mui: {
+      textfield: {
+        field: "id",
+        label: "ID",
+        helperText: "The unique identifier of the access token.",
+      },
+    },
   },
   {
     dataGridInfo: {
       field: "name",
       headerName: "Name",
       type: "string",
-      description: "The name associated with the JWT.",
+      description: "The name associated with the access token.",
       editable: true,
     },
     mui: {
@@ -57,7 +76,32 @@ export const META_INFO: MetaInfoType[] = [
         required: true,
         disabled: false,
         noSubmit: false,
-        helperText: "The name associated with the JWT.",
+        helperText: "The name associated with the access token.",
+      },
+    },
+  },
+  {
+    dataGridInfo: {
+      field: "scopes",
+      headerName: "Scopes",
+      type: "string",
+      description: "The scopes associated with the access token.",
+      editable: true,
+    },
+    mui: {
+      autocomplete: {
+        field: "scopes",
+        ClassRef: AutoCompleteClass,
+        label: "Scopes",
+        required: true,
+        freeSolo: false,
+        multiple: true,
+        options: [],
+        queryUrl: URL_ME_SCOPES,
+        queryKey: queryKeyScopes,
+        renderInput: getDefaultAutocompleteRenderInput,
+        helperText: "The scopes associated with the access token.",
+        getFinalValue: getFinalAutoCompleteValue,
       },
     },
   },
@@ -66,7 +110,7 @@ export const META_INFO: MetaInfoType[] = [
       field: "revoked",
       headerName: "Revoked",
       type: "boolean",
-      description: "Whether the JWT is revoked or not.",
+      description: "Whether the access token is revoked or not.",
     },
     mui: {
       switch: {
@@ -80,7 +124,7 @@ export const META_INFO: MetaInfoType[] = [
       field: "expiration",
       headerName: "Expiration",
       type: "dateTime",
-      description: "The date when the JWT expires.",
+      description: "The date when the access token expires.",
       valueGetter: valueGetterDate,
     },
     mui: {
@@ -89,7 +133,8 @@ export const META_INFO: MetaInfoType[] = [
         label: "Expiration",
         required: true,
         disablePast: true,
-        helperText: "The date when the JWT expires.",
+        helperText: "The date when the access token expires.",
+        getFinalValue: getFinalDayjs,
       },
     },
   },
@@ -98,7 +143,7 @@ export const META_INFO: MetaInfoType[] = [
       field: "created_at",
       headerName: "Created At",
       type: "dateTime",
-      description: "The date when the JWT was created.",
+      description: "The date when the access token was created.",
       valueGetter: valueGetterDate,
     },
     mui: {
@@ -107,25 +152,37 @@ export const META_INFO: MetaInfoType[] = [
         label: "Created At",
         disabled: true,
         disablePast: true,
-        helperText: "The date when the JWT was created.",
+        noSubmit: true,
+        helperText: "The date when the access token was created.",
+      },
+    },
+  },
+  {
+    mui: {
+      textfield: {
+        field: "value",
+        label: "Access Token",
+        disabled: true,
+        noSubmit: true,
+        helperText: "The date when the access token was created.",
       },
     },
   },
 ];
 
-export class AccessToken extends ModelBase {
-  public name: string | null;
+export class AccessToken extends NamedModelBase {
+  public value?: string;
   public revoked: boolean;
   public expiration: dayjs.Dayjs;
-  public scope: AutoCompleteOption[];
+  public scopes: AutoCompleteOption[];
   public created_at?: dayjs.Dayjs;
 
   constructor(data: any) {
-    super(data.id);
-    this.name = data.name;
-    this.revoked = data.revoked;
+    super(data.name, data.id);
+    this.value = data.value;
+    this.scopes = data.scopes;
+    this.revoked = data.revoked ?? false;
     this.expiration = dayjs(data.expiration);
-    this.scope = data.scope;
     this.created_at = dayjs(data.created_at);
   }
 }

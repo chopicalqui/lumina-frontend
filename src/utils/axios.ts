@@ -54,36 +54,63 @@ export const axiosGetWithCsrf = async <T>(
 /**
  * This function is used to issue a POST request to the server.
  */
-export const axiosPost = async <T>(
+export const axiosPost = async <TData, TVariables>(
   url: string,
-  data?: any,
+  data?: TVariables,
   config?: AxiosRequestConfig<any> | undefined
-): Promise<T> => {
+): Promise<TData> => {
   const headers = { ...(config?.headers ?? {}) };
   const token = getCookieValue(CSRF_TOKEN_HEADER);
   if (token) {
     headers[CSRF_TOKEN_HEADER] = token;
   }
   return axiosClient
-    .post<T, AxiosResponse<T, StatusMessage>>(url, data, { ...config, headers })
+    .post<
+      TData,
+      AxiosResponse<TData, StatusMessage>
+    >(url, data, { ...config, headers })
+    .then((response) => response.data);
+};
+
+/**
+ * This function is used to issue a PATCH request to the server.
+ */
+export const axiosPatch = async <TData, TVariables>(
+  url: string,
+  data?: TVariables,
+  config?: AxiosRequestConfig<any> | undefined
+): Promise<TData> => {
+  const headers = { ...(config?.headers ?? {}) };
+  const token = getCookieValue(CSRF_TOKEN_HEADER);
+  if (token) {
+    headers[CSRF_TOKEN_HEADER] = token;
+  }
+  return axiosClient
+    .patch<
+      TData,
+      AxiosResponse<TData, StatusMessage>
+    >(url, data, { ...config, headers })
     .then((response) => response.data);
 };
 
 /**
  * This function is used to issue a PUT request to the server.
  */
-export const axiosPut = async <T>(
+export const axiosPut = async <TData, TVariables>(
   url: string,
-  data?: any,
+  data?: TVariables,
   config?: AxiosRequestConfig<any> | undefined
-): Promise<T> => {
+): Promise<TData> => {
   const headers = { ...(config?.headers ?? {}) };
   const token = getCookieValue(CSRF_TOKEN_HEADER);
   if (token) {
     headers[CSRF_TOKEN_HEADER] = token;
   }
   return axiosClient
-    .put<T, AxiosResponse<T, StatusMessage>>(url, data, { ...config, headers })
+    .put<
+      TData,
+      AxiosResponse<TData, StatusMessage>
+    >(url, data, { ...config, headers })
     .then((response) => response.data);
 };
 

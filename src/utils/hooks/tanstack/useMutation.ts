@@ -106,6 +106,7 @@ export const useMutation = <
 
   const mutation = useTanstackMutation<TData, TError, TVariables, TContext>({
     ...options,
+    mutationFn: props.mutationFn,
     networkMode: "offlineFirst",
   });
 

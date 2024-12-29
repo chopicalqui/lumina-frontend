@@ -51,7 +51,7 @@ const ConfirmationDialog = React.memo((props: ConfirmationDialogOptions) => {
 
   return (
     <>
-      <UseMutationAlert context={mutation} />
+      {mutation && <UseMutationAlert {...mutation} />}
       <Portal container={document.getElementById("confirm-dialog")}>
         <Dialog
           open={open}

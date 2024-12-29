@@ -21,15 +21,18 @@
 
 import React from "react";
 import {
+  checkStateForErrors,
   ControlFactoryReducerOptions,
   ControlFactoryReducerState,
   createInitialStateStates,
   createInitialStateValues,
   createStateColumns,
+  getFinalState,
   handleOnChangeBlur,
   MetaInfoType,
   OnBlurOptionsType,
   OnChangeOptionsType,
+  OnSubmitOptionsType,
   StateValueType,
 } from "../../../components/inputs/controlFactoryUtils";
 import { UseQueryForDataGridResult } from "../tanstack/useQuery";
@@ -64,6 +67,10 @@ export interface UseControlFactoryResult {
   onChange: (props: OnChangeOptionsType) => void;
   // The onBlur event handler for input controls.
   onBlur: (props: OnBlurOptionsType) => void;
+  // The onSubmit event handler for input controls.
+  onSubmit: (props?: OnSubmitOptionsType) => void;
+  // Function to highlight the errors of the input controls.
+  highlightErrors: () => void;
   // Function to update the values of the input controls.
   updateValues: (content: any) => void;
 }
@@ -95,6 +102,20 @@ const controlFactoryReducer = (
       ...state,
       values: { ...state.values, ...content, ...result },
     };
+  } else if (action === "ON_SUBMIT") {
+    const newState = checkStateForErrors(state);
+    // If there are errors, we return the state.
+    if (newState.hasErrors) {
+      throw new Error(
+        "The on submit action should only be called when you are sure that there aren't any errors."
+      );
+    }
+    // If there are no errors, we obtain the final value and call the mutate function.
+    const result = getFinalState(newState);
+    options.onSubmitOptions?.mutate(result);
+  } else if (action == "HIGHLIGHT_ERRORS") {
+    const newState = checkStateForErrors(state);
+    return newState;
   }
   return { ...state };
 };
@@ -104,7 +125,10 @@ const controlFactoryReducer = (
  */
 export const useControlFactory = <T>(
   metaInfo: MetaInfoType[],
-  queryContext?: UseQueryForDataGridResult<T>
+  queryContext?: UseQueryForDataGridResult<T>,
+  // The options for the onSubmit event handler.
+  // You can either provide it as a hook parameter or as a parameter in the onSubmit function.
+  onSubmitOptions?: OnSubmitOptionsType
 ): UseControlFactoryResult => {
   const initialState = useInitialState(metaInfo);
   const [state, dispatch] = React.useReducer(
@@ -140,6 +164,7 @@ export const useControlFactory = <T>(
 
   /**
    * Function to update the values of the input controls.
+   * Note: The keys of the content object must exist in the columns object.
    */
   const updateValues = React.useCallback(
     (content: StateValueType) =>
@@ -150,7 +175,48 @@ export const useControlFactory = <T>(
     []
   );
 
-  // Update the values when the query context is successful.
+  /**
+   * The onSubmit event handler for input controls.
+   */
+  const onSubmit = React.useCallback(
+    (props?: OnSubmitOptionsType) => {
+      // Check if there are errors in the form.
+      const tmpState = checkStateForErrors(state);
+      if (tmpState.hasErrors) {
+        dispatch({ action: "HIGHLIGHT_ERRORS" });
+        throw new Error("The form has errors.");
+      } else {
+        dispatch({
+          action: "ON_SUBMIT",
+          onSubmitOptions: props ?? onSubmitOptions,
+        });
+      }
+    },
+    [dispatch, onSubmitOptions, state]
+  );
+
+  /**
+   * Function to highlight the errors of the input controls.
+   */
+  const highlightErrors = React.useCallback(
+    () => dispatch({ action: "HIGHLIGHT_ERRORS" }),
+    []
+  );
+
+  /**
+   * Function to check the errors of the input controls.
+   */
+  const checkErrors = React.useCallback(() => {
+    const tmpState = checkStateForErrors(state);
+    if (tmpState.hasErrors) {
+      dispatch({ action: "HIGHLIGHT_ERRORS" });
+      throw new Error("The form has errors.");
+    }
+  }, [state]);
+
+  /**
+   * Update the values when the query context is successful.
+   */
   React.useEffect(() => {
     if (isSuccess) {
       dispatch({
@@ -161,7 +227,23 @@ export const useControlFactory = <T>(
   }, [isSuccess, content]);
 
   return React.useMemo(
-    () => ({ state, onChange, onBlur, updateValues }),
-    [state, onChange, onBlur, updateValues]
+    () => ({
+      state,
+      onChange,
+      onBlur,
+      updateValues,
+      onSubmit,
+      checkErrors,
+      highlightErrors,
+    }),
+    [
+      state,
+      onChange,
+      onBlur,
+      updateValues,
+      onSubmit,
+      checkErrors,
+      highlightErrors,
+    ]
   );
 };

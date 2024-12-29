@@ -25,6 +25,9 @@ import { DetailsDialogMode } from "../../../utils/globals";
 import { Button, CircularProgress, styled } from "@mui/material";
 import { useConfirmDialog } from "../../../utils/hooks/mui/useConfirmDialog";
 import ConfirmationDialog from "./ConfirmDialog";
+import { UseControlFactoryResult } from "../../../utils/hooks/mui/useControlFactory";
+import { useAlertSnackbar } from "../../../utils/hooks/tanstack/useAlertSnackbar";
+import AlertSnackbar from "../AlertSnackbar";
 
 /**
  * Options for opening a details dialog.
@@ -32,6 +35,8 @@ import ConfirmationDialog from "./ConfirmDialog";
 export interface DetailsDialogOptions extends DialogOptions {
   // The mode of the dialog.
   mode?: DetailsDialogMode;
+  // The form context holding all user input information.
+  controlContext: UseControlFactoryResult;
   // Instructs the dialog to display a loading spinner.
   isLoading?: boolean;
 }
@@ -45,8 +50,14 @@ export const Item = styled("div")(({ theme }) => ({
  * This component is the default dialog that is used to display details about a DataGrid entry.
  */
 const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
-  const { mode, name, onClose, isLoading, ...context } = props;
+  const { mode, name, onClose, isLoading, controlContext, ...context } = props;
+  const { onSubmit: submitData } = controlContext;
+  // Dialog to confirm that user wants to cancel the dialog.
   const { showDialog, ...confirmDialogOptions } = useConfirmDialog();
+  // Alert box to inform the user about errors in one of the fields.
+  const { onNotify, ...alertContext } = useAlertSnackbar();
+
+  // Title of the dialog.
   const title = React.useMemo(() => {
     switch (mode) {
       case DetailsDialogMode.View:
@@ -58,6 +69,7 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
     }
   }, [mode, name]);
 
+  // Callback to cancel the dialog.
   const onCancel = React.useCallback(
     () =>
       showDialog({
@@ -68,12 +80,26 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
     [showDialog, onClose]
   );
 
-  const toolbarItems = React.useMemo(() => {
-    if (isLoading) {
-      return [<CircularProgress key="cicular-progress" />];
+  // Callback to check for errors and submit the form.
+  const onSubmit = React.useCallback(() => {
+    try {
+      submitData();
+    } catch (error) {
+      onNotify({ severity: "error", message: (error as Error).message });
     }
-  }, [isLoading]);
+  }, [submitData, onNotify]);
 
+  // Callback to check for errors, submit the form and close the dialog.
+  const onSubmitAndClose = React.useCallback(() => {
+    try {
+      submitData();
+      onClose();
+    } catch (error) {
+      onNotify({ severity: "error", message: (error as Error).message });
+    }
+  }, [submitData, onClose, onNotify]);
+
+  // Buttons to display in the dialog.
   const buttons = React.useMemo(() => {
     switch (mode) {
       case DetailsDialogMode.View:
@@ -84,10 +110,10 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
         ];
       case DetailsDialogMode.Edit:
         return [
-          <Button key="save" onClick={onClose}>
+          <Button key="save" onClick={onSubmit}>
             Save
           </Button>,
-          <Button key="save-close" onClick={onClose}>
+          <Button key="save-close" onClick={onSubmitAndClose}>
             Save & Close
           </Button>,
           <Button key="cancel" onClick={onCancel}>
@@ -96,10 +122,10 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
         ];
       case DetailsDialogMode.Add:
         return [
-          <Button key="add" onClick={onClose}>
+          <Button key="add" onClick={onSubmit}>
             Add
           </Button>,
-          <Button key="add-close" onClick={onClose}>
+          <Button key="add-close" onClick={onSubmitAndClose}>
             Add & Close
           </Button>,
           <Button key="cancel" onClick={onCancel}>
@@ -107,15 +133,26 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
           </Button>,
         ];
     }
-  }, [mode, onClose, onCancel]);
+  }, [mode, onClose, onCancel, onSubmit, onSubmitAndClose]);
+
+  // Toolbar items to display a loading spinner.
+  const toolbarItems = React.useMemo(() => {
+    if (isLoading) {
+      return [<CircularProgress key="cicular-progress" />];
+    }
+  }, [isLoading]);
 
   return (
     <>
+      <AlertSnackbar {...alertContext} />
       <ConfirmationDialog {...confirmDialogOptions} />
       <Dialog
         {...context}
         name={title}
-        onClose={onCancel}
+        onClose={React.useMemo(
+          () => (mode == DetailsDialogMode.View ? onClose : onCancel),
+          [mode, onClose, onCancel]
+        )}
         buttons={buttons}
         toolbarItems={toolbarItems}
       />

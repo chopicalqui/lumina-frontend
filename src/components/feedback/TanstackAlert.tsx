@@ -55,30 +55,42 @@ export const UseQueryAlert = React.memo(
  * This component can be used in combination with custom hook useTanstackMutation to submit data to the backend and
  * provide feedback about the submission back to the user.
  */
-export const UseMutationAlert = React.memo(
-  ({ context }: { context?: UseMutationResult }) => {
-    const onReset = React.useCallback(() => {
-      context?.reset();
-    }, [context]);
+export const UseMutationAlert = React.memo((context?: UseMutationResult) => {
+  const { reset, statusMessage, isError, failureReason } = context ?? {};
 
-    if (!context) return;
+  const onReset = React.useCallback(() => {
+    reset?.();
+  }, [reset]);
 
-    return (
-      <TanstackAlert
-        open={context?.statusMessage !== undefined}
-        severity={context?.statusMessage?.severity}
-        message={context?.statusMessage?.message ?? ""}
-        resetFn={onReset}
-      />
-    );
-  }
-);
+  const props = React.useMemo(() => {
+    if (statusMessage) {
+      return {
+        open: true,
+        severity: statusMessage?.severity,
+        message: statusMessage?.message ?? "",
+        resetFn: onReset,
+      };
+    } else if (isError) {
+      return {
+        open: true,
+        severity: "error" as AlertColor,
+        message: failureReason?.message ?? "",
+        resetFn: onReset,
+      };
+    }
+    return { open: false };
+  }, [statusMessage, isError, failureReason, onReset]);
 
-const TanstackAlert: React.FC<{
+  if (!context) return;
+
+  return <TanstackAlert {...props} />;
+});
+
+export const TanstackAlert: React.FC<{
   open?: boolean;
   severity?: AlertColor;
   message?: string;
-  // Usually this the useMutation's reset function. It is called when the Snackbar is closed and it is used to reset the mutation's state (isError will be reset).
+  // Usually this is the useMutation's reset function. It is called when the Snackbar is closed and it is used to reset the mutation's state (isError will be reset).
   resetFn?: () => void;
 }> = React.memo((props) => {
   const [open, setOpen] = React.useState(props.open ?? false);

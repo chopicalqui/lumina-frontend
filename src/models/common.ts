@@ -65,7 +65,7 @@ export class StatusMessage {
 }
 
 /**
- * Default input validation for text fields.
+ * Default input validation for TextField components.
  */
 export const verifyTextFieldDefault = (props: GetErrorOptions) => {
   const { value, label, required } = props;
@@ -75,16 +75,26 @@ export const verifyTextFieldDefault = (props: GetErrorOptions) => {
 };
 
 /**
- * Default input validation for date pickers.
+ * Default input validation for DatePicker components.
  */
 export const verifyDatePickerDefault = (props: GetErrorOptions) => {
   const { value, label, required } = props;
-  console.log(value);
   if (required && !value) {
     throw new Error(`${label} is required.`);
   }
   if ((value as Dayjs)?.isValid() === false) {
     throw new Error(`${label} is not a valid date.`);
+  }
+};
+
+/**
+ * Default input validation for Autocomplete components.
+ */
+
+export const verifyAutocompleteDefault = (props: GetErrorOptions) => {
+  const { value, label, required } = props;
+  if (required && !value) {
+    throw new Error(`${label} is required.`);
   }
 };
 

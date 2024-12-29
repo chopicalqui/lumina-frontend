@@ -20,51 +20,137 @@
  */
 
 import React from "react";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { DetailsDialogOptions } from "../../../utils/hooks/mui/useDetailsDialog";
 import DetailsDialog from "../../../components/feedback/dialogs/DetailsDialog";
 import { useControlFactory } from "../../../utils/hooks/mui/useControlFactory";
 import { useQueryAccessTokenById } from "../../../models/account/access_token";
 import ControlFactory from "../../../components/inputs/ControlFactory";
-import { Grid2 as Grid, Paper } from "@mui/material";
+import {
+  Grid2 as Grid,
+  IconButton,
+  InputAdornment,
+  Paper,
+} from "@mui/material";
+import { useMutationDetailsDialog } from "../../../utils/hooks/tanstack/useMutationDetailsDialog";
+import {
+  queryKeyAccessTokens,
+  URL_ME_ACCESS_TOKENS,
+} from "../../../models/account/common";
+import { UseMutationAlert } from "../../../components/feedback/TanstackAlert";
+import { DetailsDialogMode } from "../../../utils/globals";
 
 const AccessTokenDetailsDialog = React.memo(
   ({ context }: { context: DetailsDialogOptions }) => {
+    const { rowId, ...props } = context;
+
     // Obtain the access token by ID.
     const queryContext = useQueryAccessTokenById(
       React.useMemo(
         () => ({
-          rowId: context.rowId,
+          rowId: rowId,
         }),
-        [context.rowId]
+        [rowId]
       )
     );
+
+    // Obtain the Tanstack mutation to allow updating the access token.
+    const mutationContext = useMutationDetailsDialog(
+      React.useMemo(
+        () => ({
+          url: URL_ME_ACCESS_TOKENS,
+          mode: context.mode!,
+          invalidateQueryKeys: [queryKeyAccessTokens],
+        }),
+        [context.mode]
+      )
+    );
+
     // Obtain the control factory context.
     const controlContext = useControlFactory(
       queryContext.metaInfo,
-      queryContext
+      queryContext,
+      React.useMemo(
+        () => ({
+          mutate: mutationContext.mutate,
+        }),
+        [mutationContext.mutate]
+      )
+    );
+    const tokenValue = controlContext.state.values.value;
+
+    // Copy the access token to the clipboard.
+    const onAccessTokenCopy = React.useCallback(() => {
+      if (tokenValue) {
+        navigator.clipboard.writeText(tokenValue.toString());
+        // TODO: Notify the user that the access token has been copied.
+      }
+    }, [tokenValue]);
+
+    const textFieldOptions = React.useMemo(
+      () => ({
+        slotProps: {
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="copy"
+                  size="small"
+                  onClick={onAccessTokenCopy}
+                >
+                  <ContentCopyIcon fontSize="inherit" />
+                </IconButton>
+              </InputAdornment>
+            ),
+          },
+        },
+      }),
+      [onAccessTokenCopy]
     );
 
     return (
       <DetailsDialog
-        {...context}
+        {...props}
         maxWidth="sm"
         fullWidth
         isLoading={queryContext.isLoading}
+        controlContext={controlContext}
       >
+        <UseMutationAlert {...mutationContext} />
         <Paper sx={{ p: 2, mb: 2 }}>
           <Grid container spacing={2}>
             <Grid size={12}>
               <ControlFactory field="name" context={controlContext} />
             </Grid>
             <Grid size={12}>
-              <ControlFactory field="revoked" context={controlContext} />
+              <ControlFactory field="scopes" context={controlContext} />
             </Grid>
-            <Grid size={12}>
+            <Grid size={6}>
               <ControlFactory field="expiration" context={controlContext} />
             </Grid>
-            <Grid size={12}>
-              <ControlFactory field="created_at" context={controlContext} />
+            <Grid size={6}>
+              <ControlFactory
+                field="revoked"
+                context={controlContext}
+                switchOptions={React.useMemo(
+                  () => ({
+                    type: "password",
+                    disabled:
+                      controlContext?.state?.mode !== DetailsDialogMode.Add,
+                  }),
+                  [controlContext.state.mode]
+                )}
+              />
             </Grid>
+            {tokenValue && (
+              <Grid size={12}>
+                <ControlFactory
+                  field="value"
+                  context={controlContext}
+                  textFieldOptions={textFieldOptions}
+                />
+              </Grid>
+            )}
           </Grid>
         </Paper>
       </DetailsDialog>

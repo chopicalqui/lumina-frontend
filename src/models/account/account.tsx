@@ -28,6 +28,7 @@ import {
   getEnumNames,
   valueGetterAutoCompleteOptionList,
   valueGetterDate,
+  getFinalDayjs,
 } from "../../utils/globals";
 import {
   ChildQueryOptions,
@@ -56,6 +57,13 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "ID",
       type: "string",
       hideable: true,
+    },
+    mui: {
+      textfield: {
+        field: "id",
+        label: "ID",
+        helperText: "The unique identifier of the access token.",
+      },
     },
   },
   {
@@ -135,9 +143,8 @@ export const META_INFO: MetaInfoType[] = [
       datapicker: {
         field: "activeFrom",
         label: "Active From",
-        required: true,
-        disablePast: true,
         helperText: "The date from which onward the account can be used.",
+        getFinalValue: getFinalDayjs,
       },
     },
   },
@@ -153,9 +160,9 @@ export const META_INFO: MetaInfoType[] = [
       datapicker: {
         field: "activeUntil",
         label: "Active Until",
-        required: true,
         disablePast: true,
         helperText: "The date until which the account can be used.",
+        getFinalValue: getFinalDayjs,
       },
     },
   },
@@ -314,8 +321,8 @@ export const useDeleteAccount = () =>
     React.useMemo(
       () => ({
         mutationFn: async (data: any) => axiosDelete(`${URL_ACCOUNTS}/${data}`),
-        onSuccess: () =>
-          queryClient.invalidateQueries({ queryKey: queryKeyAccounts }),
+        onSuccess: async () =>
+          await queryClient.invalidateQueries({ queryKey: queryKeyAccounts }),
       }),
       []
     )

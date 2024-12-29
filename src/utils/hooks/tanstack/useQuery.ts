@@ -82,8 +82,8 @@ export const useQuery = <T>(
     queryKey,
     ...options
   } = props;
-  const refreshOptions = React.useMemo(() => {
-    return {
+  const refreshOptions = React.useMemo(
+    () => ({
       staleTime: props.disableAutoRefresh ? Infinity : staleTime,
       gcTime: props.disableAutoRefresh ? Infinity : gcTime,
       refetchInterval: props.disableAutoRefresh ? false : refetchInterval,
@@ -92,16 +92,17 @@ export const useQuery = <T>(
         : refetchOnWindowFocus,
       refetchOnMount: props.disableAutoRefresh ? "always" : refetchOnMount,
       refetchOnReconnect: props.disableAutoRefresh ? false : refetchOnReconnect,
-    };
-  }, [
-    props.disableAutoRefresh,
-    staleTime,
-    gcTime,
-    refetchInterval,
-    refetchOnWindowFocus,
-    refetchOnMount,
-    refetchOnReconnect,
-  ]);
+    }),
+    [
+      props.disableAutoRefresh,
+      staleTime,
+      gcTime,
+      refetchInterval,
+      refetchOnWindowFocus,
+      refetchOnMount,
+      refetchOnReconnect,
+    ]
+  );
 
   const query = useQueryTanstack({
     ...options,

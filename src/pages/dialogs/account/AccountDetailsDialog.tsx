@@ -28,10 +28,14 @@ import { useQueryAccountById } from "../../../models/account/account";
 import { useControlFactory } from "../../../utils/hooks/mui/useControlFactory";
 import { Grid2 as Grid, Paper } from "@mui/material";
 import ControlFactory from "../../../components/inputs/ControlFactory";
+import { useMutationDetailsDialog } from "../../../utils/hooks/tanstack/useMutationDetailsDialog";
+import { queryKeyAccounts, URL_ACCOUNTS } from "../../../models/account/common";
+import { UseMutationAlert } from "../../../components/feedback/TanstackAlert";
 
 const AccountDetailsDialog = React.memo(
   ({ context }: { context: DetailsDialogOptions }) => {
     const { rowId, ...props } = context;
+
     // Obtain the access token by ID.
     const queryContext = useQueryAccountById(
       React.useMemo(
@@ -41,10 +45,29 @@ const AccountDetailsDialog = React.memo(
         [rowId]
       )
     );
+
+    // Obtain the Tanstack mutation to allow updating the account.
+    const mutationContext = useMutationDetailsDialog(
+      React.useMemo(
+        () => ({
+          url: URL_ACCOUNTS,
+          mode: context.mode!,
+          invalidateQueryKeys: [queryKeyAccounts],
+        }),
+        [context.mode]
+      )
+    );
+
     // Obtain the control factory context.
     const controlContext = useControlFactory(
       queryContext.metaInfo,
-      queryContext
+      queryContext,
+      React.useMemo(
+        () => ({
+          mutate: mutationContext.mutate,
+        }),
+        [mutationContext.mutate]
+      )
     );
 
     return (
@@ -53,7 +76,9 @@ const AccountDetailsDialog = React.memo(
         maxWidth="md"
         fullWidth
         isLoading={queryContext.isLoading}
+        controlContext={controlContext}
       >
+        <UseMutationAlert {...mutationContext} />
         <Paper sx={{ p: 2, mb: 2 }}>
           <Grid container spacing={2}>
             <Grid size={6}>

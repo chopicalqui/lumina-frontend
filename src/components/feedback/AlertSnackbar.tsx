@@ -20,28 +20,32 @@
  */
 
 import React from "react";
-import {
-  Switch as MuiSwitch,
-  SwitchProps as MuiSwitchProps,
-  FormControlLabel,
-} from "@mui/material";
-import { LuminaControlOptions } from "./common";
+import { StatusMessage } from "../../models/common";
+import { TanstackAlert } from "./TanstackAlert";
 
-export interface SwitchOptions extends LuminaControlOptions, MuiSwitchProps {
-  label: string;
+/**
+ * Options for the alert snackbar.
+ */
+export interface AlertSnackbarOptions {
+  context?: StatusMessage;
+  onClose: () => void;
 }
 
-const Switch: React.FC<SwitchOptions> = React.memo((props) => {
-  const { label } = props;
-  const sx = React.useMemo(() => ({ width: "100%", ...props.sx }), [props.sx]);
-
+/**
+ * Displays an alert snackbar.
+ */
+const AlertSnackbar = React.memo((props: AlertSnackbarOptions) => {
+  if (props.context === undefined) {
+    return null;
+  }
   return (
-    <FormControlLabel
-      control={<MuiSwitch {...props} sx={sx} />}
-      labelPlacement="top"
-      label={label}
+    <TanstackAlert
+      open={true}
+      severity={props.context.severity}
+      message={props.context.message}
+      resetFn={props.onClose}
     />
   );
 });
 
-export default Switch;
+export default AlertSnackbar;

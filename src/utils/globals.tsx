@@ -19,6 +19,7 @@
  * @license GPLv3
  */
 
+import { AutocompleteRenderInputParams, TextField } from "@mui/material";
 import dayjs from "dayjs";
 
 // Define a model class type with a constructor
@@ -28,9 +29,22 @@ export type ClassType<T> = new (...args: any[]) => T;
  * This type is used to define the auto-complete options in the application.
  */
 export type AutoCompleteOption = {
-  id: number;
+  id: string;
   label: string;
 };
+
+/**
+ * This class is used to define the auto-complete options in the application.
+ */
+export class AutoCompleteClass implements AutoCompleteOption {
+  id: string;
+  label: string;
+
+  constructor(data: AutoCompleteOption) {
+    this.id = data.id;
+    this.label = data.label;
+  }
+}
 
 /**
  * This enum is used to define the account roles in the application.
@@ -122,3 +136,22 @@ export const getCookieValue = (cookieName: string): string | null => {
   }
   return null;
 };
+
+/**
+ * This function is used to get the default render input for the Autocomplete component.
+ */
+export const getDefaultAutocompleteRenderInput = (
+  params: AutocompleteRenderInputParams
+) => <TextField {...params} />;
+
+/**
+ * This function is used to get the final dayjs value.
+ */
+export const getFinalDayjs = (value?: dayjs.Dayjs) =>
+  value?.format("YYYY-MM-DD");
+
+/**
+ * This function is used to get the final value of the final Autocomplete value.
+ */
+export const getFinalAutoCompleteValue = (value: AutoCompleteOption) =>
+  Array.isArray(value) ? value.map((x) => x.id) : value.id;

@@ -22,24 +22,47 @@
 import React from "react";
 import TextField from "./TextField";
 import { UseControlFactoryResult } from "../../utils/hooks/mui/useControlFactory";
-import { TextFieldProps } from "@mui/material";
+import {
+  AutocompleteChangeReason,
+  SwitchProps,
+  TextFieldProps,
+} from "@mui/material";
 import Switch, { SwitchOptions } from "./Switch";
-import DatePicker, { DatePickerOptions } from "./DatePicker";
+import DatePicker, { DatePickerOptions, DatePickerProps } from "./DatePicker";
 import dayjs from "dayjs";
+import Autocomplete, {
+  AutocompleteOptions,
+  AutocompleteProps,
+} from "./Autocomplete";
+import { AutoCompleteClass } from "../../utils/globals";
 
-export interface ControlFactoryOptions {
+export interface ControlFactoryProps {
   // The attribute name of the control.
   field: string;
   // The control factory's context returned by the useControlFactory hook.
   context: UseControlFactoryResult;
+  // TODO: Add options for each control type.
+  textFieldOptions?: TextFieldProps;
+  switchOptions?: SwitchProps;
+  datePickerOptions?: DatePickerProps;
+  autoCompleteOptions?: AutocompleteProps;
 }
 
+export type ControlFactoryOptions = ControlFactoryProps;
+
 const ControlFactory = React.memo(
-  ({ field, context }: ControlFactoryOptions) => {
+  ({
+    field,
+    context,
+    textFieldOptions,
+    switchOptions,
+    datePickerOptions,
+  }: ControlFactoryOptions) => {
     const fieldValue = context.state.values[field];
     const fieldState = context.state.states[field];
     const fieldColumn = context.state.columns[field];
     const { onChange, onBlur } = context;
+    const { label: _tmp, ...datePickerProps } = datePickerOptions ?? {};
 
     // Create all input control events
     const onChangeTextField = React.useCallback(
@@ -59,6 +82,14 @@ const ControlFactory = React.memo(
       ) => onChange({ event: undefined, field, newValue: value }),
       [field, onChange]
     );
+    const onChangeAutoComplete = React.useCallback(
+      (
+        event: React.SyntheticEvent,
+        newValue: any | any[] | null,
+        _reason: AutocompleteChangeReason
+      ) => onChange({ event, field, newValue }),
+      []
+    );
     const onBlurTextField = React.useCallback(
       (
         event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>
@@ -76,19 +107,12 @@ const ControlFactory = React.memo(
     const { options } = fieldColumn;
 
     // TODO: Update this if statement to include new MUI control
-    if (fieldColumn.type === "switch") {
-      return (
-        <Switch
-          {...(options as SwitchOptions)}
-          value={fieldValue}
-          onChange={onChangeSwitch}
-        />
-      );
-    } else if (fieldColumn.type === "textfield") {
+    if (fieldColumn.type === "textfield") {
       const { helperText, ...props } = options as TextFieldProps;
       return (
         <TextField
           {...props}
+          {...textFieldOptions}
           value={fieldValue as string}
           error={fieldState.errorText !== undefined}
           helperText={fieldState.errorText ? fieldState.errorText : helperText}
@@ -96,15 +120,40 @@ const ControlFactory = React.memo(
           onBlur={onBlurTextField}
         />
       );
+    } else if (fieldColumn.type === "autocomplete") {
+      const { helperText, ...props } = options as AutocompleteOptions;
+      return (
+        <Autocomplete
+          {...props}
+          ClassRef={AutoCompleteClass}
+          error={fieldState.errorText !== undefined}
+          helperText={
+            fieldState.errorText ? fieldState.errorText : helperText?.toString()
+          }
+          value={fieldValue as AutoCompleteClass}
+          onChange={onChangeAutoComplete}
+        />
+      );
+    } else if (fieldColumn.type === "switch") {
+      return (
+        <Switch
+          {...(options as SwitchOptions)}
+          {...switchOptions}
+          value={fieldValue}
+          onChange={onChangeSwitch}
+        />
+      );
     } else if (fieldColumn.type === "datepicker") {
       const { helperText, ...props } = options as DatePickerOptions<any>;
       return (
         <DatePicker
           {...props}
+          {...datePickerProps}
           value={fieldValue as dayjs.Dayjs}
           error={fieldState.errorText !== undefined}
           helperText={fieldState.errorText || helperText}
           onChange={onChangeDatePicker}
+          onBlur={onBlurTextField}
         />
       );
     } else {

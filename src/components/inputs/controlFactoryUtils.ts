@@ -29,7 +29,12 @@ import { Dayjs } from "dayjs";
 import {
   verifyTextFieldDefault,
   verifyDatePickerDefault,
+  StatusMessage,
+  verifyAutocompleteDefault,
 } from "../../models/common";
+import { MutateOptions } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+import { AutocompleteOptions } from "./Autocomplete";
 
 /**
  * The different states an input control can have.
@@ -51,8 +56,6 @@ export type StateStateType = { [key: string]: StateFlagProps };
 export interface MetaInfoType {
   // Whether the column is initially visible in the MUI DataGrid (default is true).
   visibleDataGrid?: boolean;
-  // Information for InputControlWrapper component.
-  inputControlInfo?: any;
   // Column information for the MUI DataGrid.
   dataGridInfo?: GridColDef;
   // Information for the useControlFactory hook to setup the control.
@@ -61,15 +64,16 @@ export interface MetaInfoType {
     textfield?: TextFieldOptions;
     switch?: SwitchOptions;
     datapicker?: DatePickerOptions<any>;
+    autocomplete?: AutocompleteOptions;
   };
 }
 
 /**
  * The different types of OnChange events.
  */
-export type OnChangeEventType = React.ChangeEvent<
-  HTMLInputElement | HTMLTextAreaElement
->;
+export type OnChangeEventType =
+  | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  | React.SyntheticEvent;
 
 /**
  * The different types of OnBlur events.
@@ -82,15 +86,22 @@ export type OnBlurEventType = React.FocusEvent<
 /*
  * The different types of reducer function actions.
  */
-export type StateActions = "ON_CHANGE" | "ON_BLUR" | "UPDATE_VALUES";
+export type StateActions =
+  | "ON_CHANGE"
+  | "ON_BLUR"
+  | "UPDATE_VALUES"
+  | "ON_SUBMIT"
+  | "HIGHLIGHT_ERRORS";
 
 // TODO: Update this type to include new MUI controls
 export type MuiOptionsType =
   | TextFieldOptions
   | SwitchOptions
+  | AutocompleteOptions
   | DatePickerOptions<any>;
+
 // TODO: Update this type to include new MUI controls
-export type MuiType = "textfield" | "switch" | "datepicker";
+export type MuiType = "textfield" | "switch" | "datepicker" | "autocomplete";
 export type ControlValueType =
   | string
   | boolean
@@ -164,6 +175,19 @@ export interface OnBlurOptionsType {
   newValue: ControlValueType;
 }
 
+export interface OnSubmitOptionsType {
+  // The mutate function to call.
+  mutate: (
+    variables: any,
+    options?:
+      | MutateOptions<unknown, AxiosError<StatusMessage, any>, any, undefined>
+      | undefined
+  ) => void;
+  // The onUpdate function returned by the useControlFactory hook. It updates the state values after the mutation
+  // was successful (status code 200).
+  onUpdate?: (content: StateValueType) => void;
+}
+
 /**
  * The options of the ControlFactory reducer.
  */
@@ -174,12 +198,74 @@ export interface ControlFactoryReducerOptions {
   onChangeOptions?: OnChangeOptionsType;
   // The arguments of action ON_BLUR.
   onBlurOptions?: OnBlurOptionsType;
+  // The arguments of action ON_SUBMIT.
+  onSubmitOptions?: OnSubmitOptionsType;
   // The arguments of action UPDATE_VALUES.
   updateValuesOptions?: {
     // Contains the key value pairs of the controls that should be updated.
     content: any;
   };
 }
+
+/**
+ * This function is used to check the entire state for errors.
+ */
+export const checkStateForErrors = (state: ControlFactoryReducerState) => {
+  const result = { ...state };
+  result.hasErrors = false;
+  Object.entries(state.columns).forEach(([field, fieldColumn]) => {
+    // Perform input validation
+    const fieldValue = state.values[field];
+    const errorOptions = {
+      field,
+      label: fieldColumn?.label,
+      value: fieldValue,
+      state,
+      required: fieldColumn?.options.required,
+    };
+    try {
+      // TODO: Update this if statement to include new MUI control
+      if (fieldColumn.type === "textfield") {
+        // Perform the default validation
+        verifyTextFieldDefault(errorOptions);
+        // Perform the custom validation
+        fieldColumn?.getError?.(errorOptions);
+      } else if (fieldColumn.type === "autocomplete") {
+        // Perform the default validation
+        verifyTextFieldDefault(errorOptions);
+        // Perform the custom validation
+        fieldColumn?.getError?.(errorOptions);
+      } else if (fieldColumn.type === "switch") {
+        // Perform the custom validation
+        fieldColumn?.getError?.(errorOptions);
+      } else if (fieldColumn.type === "datepicker") {
+        // Perform the default validation
+        verifyDatePickerDefault(errorOptions);
+        // Perform the custom validation
+        fieldColumn?.getError?.(errorOptions);
+      }
+    } catch (e: unknown) {
+      result.hasErrors = true;
+      result.states[field].errorText = (e as Error).message;
+    }
+  });
+  return result;
+};
+
+/**
+ * This function is used to obtain the final state of the form.
+ */
+export const getFinalState = (state: ControlFactoryReducerState) => {
+  const result: StateValueType = {};
+  Object.entries(state.columns).forEach(([field, fieldColumn]) => {
+    if (!fieldColumn.noSubmit) {
+      const fieldValue = state.values[field];
+      const finalValue = fieldColumn?.getFinalValue?.(fieldValue) ?? fieldValue;
+      result[field] = finalValue;
+    }
+  });
+  return result;
+};
 
 /**
  * Helper function to split the MUI options from the rest of the options.
@@ -217,19 +303,23 @@ export const getControlValue = (
   const fieldColumn = field ? state.columns[field] : undefined;
 
   // TODO: Update this switch statement to include new MUI control
-  switch (fieldColumn?.type) {
-    case "textfield":
-      return (
-        onChangeOptions?.event?.target.value ??
-        onBlurOptions?.event.target.value ??
-        ""
-      );
-    case "switch":
-      return reducerOptions.onChangeOptions?.newValue ?? false;
-    case "datepicker":
-      return reducerOptions.onChangeOptions?.newValue ?? null;
-    default:
-      throw new Error("Invalid control type: " + fieldColumn?.type);
+  if (fieldColumn?.type === "textfield") {
+    const onChangeEvent = onChangeOptions?.event as React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement
+    >;
+    const onBlurEvent = onBlurOptions?.event as React.FocusEvent<
+      HTMLInputElement | HTMLTextAreaElement,
+      Element
+    >;
+    return onChangeEvent?.target.value ?? onBlurEvent?.target.value ?? "";
+  } else if (fieldColumn?.type === "autocomplete") {
+    return reducerOptions.onChangeOptions?.newValue ?? null;
+  } else if (fieldColumn?.type === "switch") {
+    return reducerOptions.onChangeOptions?.newValue ?? false;
+  } else if (fieldColumn?.type === "datepicker") {
+    return reducerOptions.onChangeOptions?.newValue ?? null;
+  } else {
+    throw new Error(`Invalid control type: ${fieldColumn?.type}`);
   }
 };
 
@@ -287,16 +377,43 @@ export const handleOnChangeBlur = (
       states: { ...state.states, [field]: fieldState },
       values: { ...state.values, [field]: newValue },
     };
-  } else if (fieldColumn?.type === "datepicker") {
-    // Perform input validation
+  } else if (fieldColumn?.type === "autocomplete") {
     let error: string | undefined = undefined;
     try {
       // Perform the default validation
-      verifyDatePickerDefault(errorOptions);
+      verifyAutocompleteDefault(errorOptions);
       // Perform the custom validation
       fieldColumn?.getError?.(errorOptions);
     } catch (e: unknown) {
       error = (e as Error).message;
+    }
+    // Update error flag and message
+    const fieldState: StateFlagProps = {
+      errorText: error,
+      edited: fieldValue !== newValue,
+    };
+    // Update state
+    return {
+      ...state,
+      states: { ...state.states, [field]: fieldState },
+      values: {
+        ...state.values,
+        [field]: newValue || null,
+      },
+    };
+  } else if (fieldColumn?.type === "datepicker") {
+    // Perform input validation
+    let error: string | undefined = undefined;
+    // Only validate when the focus is lost
+    if (action === "ON_BLUR") {
+      try {
+        // Perform the default validation
+        verifyDatePickerDefault(errorOptions);
+        // Perform the custom validation
+        fieldColumn?.getError?.(errorOptions);
+      } catch (e: unknown) {
+        error = (e as Error).message;
+      }
     }
     // Update error flag and message
     const fieldState: StateFlagProps = {
@@ -336,6 +453,17 @@ export const createStateColumns = (metaInfo: MetaInfoType[]): StateColumnType =>
           field,
           type: "textfield",
           options: options as TextFieldOptions,
+        };
+      } else if (mui?.autocomplete !== undefined) {
+        const { options, field, label, ...rest } = splitMuiOptions(
+          mui.autocomplete
+        );
+        acc[field] = {
+          ...rest,
+          label,
+          field,
+          type: "autocomplete",
+          options: options as AutocompleteOptions,
         };
       } else if (mui?.switch !== undefined) {
         const { options, field, label, ...rest } = splitMuiOptions(mui.switch);
@@ -377,7 +505,7 @@ export const createInitialStateValues = (
     } else if (value.type === "datepicker") {
       acc[key] = null;
     } else {
-      throw new Error(`Unknown type ${value.type}.`);
+      acc[key] = null;
     }
     return acc;
   }, {} as StateValueType);
@@ -392,7 +520,9 @@ export const createInitialStateStates = (
   return Object.entries(columns).reduce((acc: StateStateType, [key, value]) => {
     const defaultValue = { edited: false, errorText: undefined };
     // TODO: Update this if statement to include new MUI control
-    if (["textfield", "switch", "datepicker"].includes(value.type)) {
+    if (
+      ["textfield", "switch", "datepicker", "autocomplete"].includes(value.type)
+    ) {
       acc[key] = { ...defaultValue };
     } else {
       throw new Error(`Unknown type ${value.type}.`);

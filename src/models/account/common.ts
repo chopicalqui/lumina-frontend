@@ -30,6 +30,7 @@ export const queryKeyAccountMeSettings = [
   ...queryKeyAccountMe,
   "accountSettings",
 ];
+export const queryKeyScopes = [...queryKeyAccountMe, "scopes"];
 export const queryKeyAccessTokens = [...queryKeyAccountMe, "accessTokens"];
 export const queryKeyAccountMeDataGrid = [...queryKeyAccountMe];
 
@@ -51,5 +52,7 @@ export const URL_DATAGRID_SETTINGS =
 export const URL_DATAGRID_SETTINGS_RESET = URL_DATAGRID_SETTINGS + "/reset";
 // Notifications
 export const URL_ME_NOTIFICATIONS = URL_ACCOUNTS_ME + "/notifications";
+// Scopes
+export const URL_ME_SCOPES = URL_ACCOUNTS_ME + "/scopes";
 // Access tokens
 export const URL_ME_ACCESS_TOKENS = URL_ACCOUNTS_ME + "/access-tokens";
