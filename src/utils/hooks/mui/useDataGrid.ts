@@ -105,34 +105,40 @@ export const useDataGrid = <T>({
   );
 
   // Obtain DataGrid configuration for DataGrid.
-  const querySettings = useQuery<GridInitialState>({
-    queryKey: settingsQueryKey,
-    queryFn: React.useCallback(
-      async () => axiosGet<GridInitialState>(settingsUrl),
-      [settingsUrl]
-    ),
-    enabled: settingsQueryKey.length > 0 && settingsUrl.length > 0,
-  });
+  const querySettings = useQuery<GridInitialState>(
+    React.useMemo(
+      () => ({
+        queryKey: settingsQueryKey,
+        queryFn: async () => axiosGet<GridInitialState>(settingsUrl),
+        enabled: settingsQueryKey.length > 0 && settingsUrl.length > 0,
+      }),
+      [settingsQueryKey, settingsUrl]
+    )
+  );
 
   // Update DataGrid configuration for DataGrid.
-  const mutateConfig = useMutation({
-    mutationFn: React.useCallback(
-      async (data: any) => axiosPut(settingsUrl, data),
-      [settingsUrl]
-    ),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
-  });
+  const mutateConfig = useMutation(
+    React.useMemo(
+      () => ({
+        mutationFn: async (data: any) => axiosPut(settingsUrl, data),
+        onSuccess: () =>
+          queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
+      }),
+      [settingsUrl, settingsQueryKey]
+    )
+  );
 
   // Reset DataGrid configuration for DataGrid.
-  const mutateResetConfig = useMutation({
-    mutationFn: React.useCallback(
-      async () => axiosPut(settingsResetUrl),
-      [settingsResetUrl]
-    ),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
-  });
+  const mutateResetConfig = useMutation(
+    React.useMemo(
+      () => ({
+        mutationFn: async () => axiosPut(settingsResetUrl),
+        onSuccess: () =>
+          queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
+      }),
+      [settingsQueryKey, settingsResetUrl]
+    )
+  );
 
   const { showDialog: showConfirmResetDialog, ...confirmResetDialogOptions } =
     useConfirmDialog();
@@ -149,14 +155,26 @@ export const useDataGrid = <T>({
   );
 
   // Prepare the default DataGrid toolbar
-  const dataGridToolbar = useDefaultDataGridToolbar({
-    queryContext,
-    me: me,
-    onResetSettings,
-    createButtonName,
-    onCreateButtonClick,
-    elements,
-  });
+  const dataGridToolbar = useDefaultDataGridToolbar(
+    React.useMemo(
+      () => ({
+        queryContext,
+        me: me,
+        onResetSettings,
+        createButtonName,
+        onCreateButtonClick,
+        elements,
+      }),
+      [
+        queryContext,
+        me,
+        onResetSettings,
+        createButtonName,
+        onCreateButtonClick,
+        elements,
+      ]
+    )
+  );
 
   // Prepare the default DataGrid slots
   const slots = React.useMemo(() => {

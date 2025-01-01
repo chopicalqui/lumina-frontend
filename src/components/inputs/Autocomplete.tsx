@@ -19,39 +19,43 @@
  * @license GPLv3
  */
 import {
-  AutocompleteProps as MuiAutocompleteProps,
+  AutocompleteProps as MuiAutocompleteProps_,
   ChipTypeMap,
   FilterOptionsState,
   Autocomplete as MuiAutocomplete,
   FormControl,
-  FormHelperText,
-  InputLabel,
+  TextField,
 } from "@mui/material";
 import React from "react";
-import { AutoCompleteClass, ClassType } from "../../utils/globals";
+import { AutoCompleteClass, AutoCompleteOption } from "../../utils/globals";
 import { QueryKey } from "@tanstack/react-query";
 import {
   AutocompleteChangeReason,
   AutocompleteRenderInputParams,
   createFilterOptions,
 } from "@mui/material/Autocomplete";
-import { UseMutationResult } from "../../utils/hooks/tanstack/useMutation";
+import {
+  useMutation,
+  UseMutationResult,
+} from "../../utils/hooks/tanstack/useMutation";
 import { useQuery } from "../../utils/hooks/tanstack/useQuery";
-import { axiosGet } from "../../utils/axios";
+import { axiosDelete, axiosGet, axiosPost } from "../../utils/axios";
 import { LuminaControlOptions } from "./common";
+import { queryClient } from "../../utils/consts";
+import { UseMutationAlert } from "../feedback/TanstackAlert";
 
 const filter = createFilterOptions<AutoCompleteClass>();
 
 /**
  * The AutocompleteProps type.
  */
-export type AutocompleteProps<
+export type MuiAutocompleteProps<
   T extends AutoCompleteClass = AutoCompleteClass,
   Multiple extends boolean | undefined = false,
   DisableClearable extends boolean | undefined = false,
   FreeSolo extends boolean | undefined = false,
   ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"],
-> = MuiAutocompleteProps<
+> = MuiAutocompleteProps_<
   T,
   Multiple,
   DisableClearable,
@@ -60,201 +64,273 @@ export type AutocompleteProps<
 >;
 
 /**
+ * Helper interface to notify the onChange handler that a new value should be created.
+ *
+ * This interface is used by the filterOptions function to suggest the creation of a new value.
+ */
+interface AutocompleteFilterClass extends AutoCompleteClass {
+  new?: boolean;
+}
+
+/**
  * Filter the options and suggest the creation of a new value.
  */
 const filterOptions = (
   options: AutoCompleteClass[],
   state: FilterOptionsState<AutoCompleteClass>
-) => {
-  const filtered = filter(options, state);
+): AutocompleteFilterClass[] => {
+  const filtered = filter(options, state) as AutocompleteFilterClass[];
   const { inputValue } = state;
   // Suggest the creation of a new value
-  const isExisting = options.some((option) => inputValue === option.label);
-  if (inputValue !== "" && !isExisting) {
+  if (inputValue !== "" && filtered.length === 0) {
     filtered.push({
       id: inputValue,
       label: `Add "${inputValue}"`,
+      new: true,
     });
   }
   return filtered;
 };
 
 /**
- * Interface for the Autocomplete component.
+ * The AutocompleteClass type.
  */
-export interface AutocompleteOptions<
-  T extends AutoCompleteClass = AutoCompleteClass,
-> extends LuminaControlOptions,
-    AutocompleteProps<AutoCompleteClass> {
-  // This class will be used to create new instances of the model.
-  ClassRef: ClassType<T>;
+type AutocompleteClass = any;
+
+/**
+ * The onChange event handler type.
+ */
+export type AutocompleteOnChangeType = (
+  event: React.SyntheticEvent,
+  newValue: any | any[] | null,
+  reason: AutocompleteChangeReason
+) => void;
+
+/**
+ * The onBlur event handler type.
+ */
+export type AutocompleteOnBlurType = (
+  event: React.FocusEvent<HTMLDivElement, Element>
+) => void;
+
+/**
+ * Interface for the Autocomplete component.
+ *
+ * We cannot derive it from the MuiAutocompleteProps because there are conflicting properties.
+ */
+export interface AutocompleteProps {
+  // The value of the autocomplete.
+  value?: AutoCompleteClass | AutoCompleteClass[] | null;
+  // A list of options that will be shown in the Autocomplete.
+  options?: AutoCompleteClass[];
+  // If true, the label is displayed as required and the input element is required.
+  required?: boolean;
+  // If true, the Autocomplete is free solo, meaning that the user input is not bound to provided options.
+  freeSolo?: boolean;
+  // If true, value must be an array and the menu will support multiple selections.
+  multiple?: boolean;
   // Flag to indicate if the component contains an input error.
   error?: boolean;
   // Helper text to display below the input.
   helperText?: string;
   // The endpoint to fetch the data from.
   queryUrl?: string;
+  // If true, the Autocomplete is disabled.
+  disabled?: boolean;
   // The query key used to fetch the data from the backend.
   queryKey?: QueryKey;
   // The mutation used to create a new entry in the backend.
   mutation?: UseMutationResult;
-  // Flag to indicate if the input is required.
-  required?: boolean;
-  // Flag to indicate if the input can contain multiple values.
-  multiple?: boolean;
+  // Callback fired when the value changes.
+  onChange?: AutocompleteOnChangeType;
+  // Callback fired when the TextField loses focus.
+  onBlur?: AutocompleteOnBlurType;
+  // If true, the user can delete the value.
+  allowDelete?: boolean;
 }
 
-const Autocomplete = React.memo(
-  <T extends AutoCompleteClass = AutoCompleteClass>(
-    args: AutocompleteOptions<T>
-  ) => {
-    const {
-      ClassRef,
-      error,
-      label,
-      value,
-      helperText,
-      queryUrl,
-      queryKey,
-      mutation,
-      multiple,
-      onChange,
-      getOptionLabel,
-      freeSolo,
-      ...props
-    } = args;
-    const [open, setOpen] = React.useState(false);
-    const async = queryUrl !== undefined && queryKey !== undefined;
+export type AutocompleteOptions = AutocompleteProps & LuminaControlOptions;
 
-    // Fetch the daa from the backend.
-    const queryContext = useQuery<T[]>(
-      React.useMemo(
-        () => ({
-          queryFn: async () => axiosGet(queryUrl ?? ""),
-          select: (data: T[]) => data.map((x) => new ClassRef(x)),
-          queryKey: queryKey ?? [],
-          enabled: async && open,
-        }),
-        [async, queryUrl, queryKey, ClassRef, open]
-      )
-    );
-    const options = queryContext.data ?? [];
+/**
+ * Autocomplete component that can be created by the ControlFactory component.
+ */
+const Autocomplete = React.memo((args: AutocompleteOptions) => {
+  const {
+    error,
+    label,
+    helperText,
+    queryUrl,
+    queryKey,
+    onChange,
+    onBlur,
+    ...props
+  } = args;
+  const freeSolo = args.freeSolo ?? false;
+  const multiple = args.multiple ?? false;
+  const required = args.required ?? false;
+  const value = multiple ? (args.value ?? []) : (args.value ?? null);
+  const [open, setOpen] = React.useState(false);
+  const async = queryUrl !== undefined && queryKey !== undefined;
+  const mutationPostContext = useMutation(
+    React.useMemo(
+      () => ({
+        mutationFn: async (data: any) => axiosPost(queryUrl ?? "", data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKey }),
+      }),
+      [queryUrl, queryKey]
+    )
+  );
+  const mutationDeleteContext = useMutation(
+    React.useMemo(
+      () => ({
+        mutationFn: async (data: any) => axiosDelete(queryUrl ?? "", data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKey }),
+      }),
+      [queryUrl, queryKey]
+    )
+  );
 
-    /**
-     * Function pushes new entry to the backend.
-     *
-     * We cannot use a Tanstack mutation because we must immediately obtain and process the HTTP response.
-     */
-    const onPushNewEntry = React.useCallback(async (item: string) => {}, []);
+  // Fetch the daa from the backend.
+  const queryContext = useQuery<AutocompleteClass[]>(
+    React.useMemo(
+      () => ({
+        queryFn: async () => axiosGet(queryUrl ?? ""),
+        select: (data: AutocompleteClass[]) =>
+          data.map((x) => x as AutocompleteClass),
+        queryKey: queryKey ?? [],
+        enabled: async && open,
+      }),
+      [async, queryUrl, queryKey, open]
+    )
+  );
+  const options = queryContext.data ?? [];
 
-    /**
-     * Event handler for freeSolo mode.
-     */
-    const onChangeHandler = React.useCallback(
-      async (
-        event: React.SyntheticEvent,
-        newValue: any | any[] | null,
-        reason: AutocompleteChangeReason
-      ) => {
-        // newValue contains all the selected values. Therefore, if the multiple attribute is set to true, then newValue
-        // is an array with all selected elements.
-        if (multiple) {
-          const count = newValue?.length ?? 0;
-          const newElement = newValue[count - 1];
-          const updatedValue = newValue?.slice(0, count - 1) ?? [];
-
-          if (newElement?.inputValue) {
-            // If the element does not exist in the dropdown menu yet, then it contains an object with the following
-            // structure: {inputValue: 'Production', name: 'Add "Production"'} else, it is just a string.
-            const jsonObject = await onPushNewEntry(newElement.inputValue);
-            if (jsonObject === null) {
-              return;
+  /**
+   * Function pushes new entry to the backend.
+   *
+   * We cannot use a Tanstack mutation because we must immediately obtain and process the HTTP response.
+   */
+  const onPushNewEntry = React.useCallback(
+    (
+      item: string,
+      event: React.SyntheticEvent,
+      stateValue?: AutoCompleteClass[]
+    ) => {
+      const body = { label: item };
+      mutationPostContext.mutate(body, {
+        onSuccess: (data: unknown) => {
+          if (stateValue) {
+            if (data) {
+              stateValue.push(
+                new AutoCompleteClass(data as AutoCompleteOption)
+              );
+              onChange?.(event, stateValue, "createOption");
             }
-            // Create a new value from the user input
-            updatedValue.push(jsonObject);
-            onChange?.(event, updatedValue, reason);
-          } else if (
-            getOptionLabel &&
-            typeof getOptionLabel(newElement) === "string"
-          ) {
-            // If the element is of type string, then it's a value that already exists in the dropdown menu.
-            updatedValue.push(newElement);
-            onChange?.(event, updatedValue, reason);
-          } else if (newElement) {
-            // If the user enters a new value and hits enter. In this case, query.data is empty and we have to push the value
-            // to the backend, which will create and/or just return the JSON object for us.
-            const jsonObject = await onPushNewEntry(newElement);
-            if (jsonObject === null) {
-              return;
-            }
-            updatedValue.push(jsonObject);
-            onChange?.(event, updatedValue, reason);
           } else {
-            // If the content of the component is deleted.
-            onChange?.(event, updatedValue, reason);
+            onChange?.(
+              event,
+              new AutoCompleteClass(data as AutoCompleteOption),
+              "createOption"
+            );
           }
+        },
+      });
+    },
+    [mutationPostContext, onChange]
+  );
+
+  /**
+   * Event handler for freeSolo mode.
+   */
+  const onChangeHandler = React.useCallback(
+    async (
+      event: React.SyntheticEvent,
+      newValue: any | any[] | null,
+      reason: AutocompleteChangeReason
+    ) => {
+      // newValue contains all the selected values. Therefore, if the multiple attribute is set to true, then newValue
+      // is an array with all selected elements.
+      if (multiple) {
+        const count = newValue?.length ?? 0;
+        const newElement = newValue[count - 1];
+        const updatedValue = newValue?.slice(0, count - 1) ?? [];
+
+        if (newElement?.new) {
+          // If the element does not exist in the dropdown menu yet, then we have to push the value to the backend
+          onPushNewEntry(newElement.id, event, updatedValue);
+        } else if (newElement) {
+          updatedValue.push(newElement);
+          onChange?.(event, updatedValue, reason);
         } else {
-          // TODO: This branch tests Autocomplete components with singleSelect attribute. This has not been tested yet.
-          if (newValue?.inputValue) {
-            // If the element does not exist in the dropdown menu yet, then it contains an object with the following
-            // structure: {inputValue: 'Production', name: 'Add "Production"'} else, it is just a string.
-            const jsonObject = await onPushNewEntry(newValue.inputValue);
-            if (jsonObject === null) {
-              return;
-            }
-            onChange?.(event, jsonObject, reason);
-          } else if (
-            getOptionLabel &&
-            typeof getOptionLabel(newValue) === "string"
-          ) {
-            // If the element is of type string, then it's a value that already exists in the dropdown menu.
-            onChange?.(event, newValue, reason);
-          } else if (newValue) {
-            // If the user enters a new value and hits enter. In this case, query.data is empty and we have to push the value
-            // to the backend, which will create and/or just return the JSON object for us.
-            const jsonObject = await onPushNewEntry(newValue);
-            if (jsonObject === null) {
-              return;
-            }
-            onChange?.(event, jsonObject, reason);
-          } else {
-            // If the content of the component is deleted.
-            onChange?.(event, newValue, reason);
-          }
+          // This case is called, when the last element in the selection is deleted.
+          onChange?.(event, updatedValue, reason);
         }
-      },
-      [multiple, onPushNewEntry, onChange, getOptionLabel]
-    );
+      } else {
+        if (newValue?.new) {
+          // If the element does not exist in the dropdown menu yet, then we have to push the value to the backend
+          onPushNewEntry(newValue.id, event);
+        } else if (newValue) {
+          onChange?.(event, newValue, reason);
+        } else {
+          // If the content of the component is deleted.
+          onChange?.(event, newValue, reason);
+        }
+      }
+    },
+    [multiple, onPushNewEntry, onChange]
+  );
 
-    /**
-     * Event handler that opens the Autocomplete's dropdown menu.
-     */
-    const onOpen = React.useCallback(() => setOpen(true), []);
+  /**
+   * This function is used to get the render input for the Autocomplete component.
+   */
+  const renderInput = React.useCallback(
+    (params: AutocompleteRenderInputParams) => (
+      <TextField
+        {...params}
+        label={label}
+        error={error}
+        required={required}
+        helperText={helperText}
+      />
+    ),
+    [label, error, required, helperText]
+  );
 
-    /**
-     * Event handler that closes the Autocomplete's dropdown menu.
-     */
-    const onClose = React.useCallback(() => setOpen(false), []);
+  /**
+   * Event handler that opens the Autocomplete's dropdown menu.
+   */
+  const onOpen = React.useCallback(() => setOpen(true), []);
 
-    return (
+  /**
+   * Event handler that closes the Autocomplete's dropdown menu.
+   */
+  const onClose = React.useCallback(() => setOpen(false), []);
+
+  return (
+    <>
+      <UseMutationAlert {...mutationPostContext} />
+      <UseMutationAlert {...mutationDeleteContext} />
       <FormControl error={error} fullWidth={true}>
-        <InputLabel htmlFor="input-label">{label}</InputLabel>
         <MuiAutocomplete
           {...props}
           options={options}
-          freeSolo={freeSolo}
-          multiple={multiple ?? false}
           value={value ?? []}
           open={open}
           onOpen={onOpen}
           onClose={onClose}
+          renderInput={renderInput}
+          onBlur={onBlur}
           onChange={freeSolo ? onChangeHandler : onChange}
-          filterOptions={filterOptions}
+          filterOptions={freeSolo ? filterOptions : undefined}
+          isOptionEqualToValue={React.useCallback(
+            (option: AutocompleteClass, value: AutocompleteClass) =>
+              option.id === value.id,
+            []
+          )}
         />
-        <FormHelperText id="helper-text">{helperText}</FormHelperText>
       </FormControl>
-    );
-  }
-);
+    </>
+  );
+});
 
 export default Autocomplete;

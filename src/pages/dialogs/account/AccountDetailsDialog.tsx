@@ -61,6 +61,7 @@ const AccountDetailsDialog = React.memo(
     // Obtain the control factory context.
     const controlContext = useControlFactory(
       queryContext.metaInfo,
+      context.mode,
       queryContext,
       React.useMemo(
         () => ({

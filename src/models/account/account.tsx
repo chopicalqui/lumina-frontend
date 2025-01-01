@@ -22,13 +22,13 @@
 import React from "react";
 import { Link } from "@mui/material";
 import {
-  getAutoCompleteOption,
+  getAutocompleteOption,
   ScopeEnum,
   AccountRole,
   getEnumNames,
-  valueGetterAutoCompleteOptionList,
   valueGetterDate,
   getFinalDayjs,
+  renderCellAutocompleteOptionList,
 } from "../../utils/globals";
 import {
   ChildQueryOptions,
@@ -128,7 +128,7 @@ export const META_INFO: MetaInfoType[] = [
       description: "The user's role memberships.",
       align: "center",
       headerAlign: "center",
-      valueGetter: valueGetterAutoCompleteOptionList,
+      renderCell: renderCellAutocompleteOptionList,
     },
   },
   {
@@ -209,7 +209,7 @@ export class AccountRead extends NamedModelBase {
     super(data.full_name, data.id);
     this.email = data.email;
     this.roles = data.roles.map((x: AccountRole) =>
-      getAutoCompleteOption(AccountRole, x)
+      getAutocompleteOption(AccountRole, x)
     );
     this.locked = data.locked;
     this.activeFrom = data.active_from && dayjs(data.active_from);

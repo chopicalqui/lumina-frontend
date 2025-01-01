@@ -66,12 +66,17 @@ export interface UseConfirmDialogResult extends UseConfirmDialogState {
  return (<ConfirmationDialog {...confirmationDialogOptions}>/)
  */
 export const useConfirmDialog = (): UseConfirmDialogResult => {
-  const [state, setState] = React.useState<UseConfirmDialogState>({
-    open: false,
-    title: "",
-    message: "",
-    onConfirm: undefined,
-  });
+  const [state, setState] = React.useState<UseConfirmDialogState>(
+    React.useMemo(
+      () => ({
+        open: false,
+        title: "",
+        message: "",
+        onConfirm: undefined,
+      }),
+      []
+    )
+  );
 
   const onCancel = React.useCallback(() => {
     setState((state) => state && { ...state, open: false });

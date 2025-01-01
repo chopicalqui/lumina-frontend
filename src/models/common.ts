@@ -93,7 +93,7 @@ export const verifyDatePickerDefault = (props: GetErrorOptions) => {
 
 export const verifyAutocompleteDefault = (props: GetErrorOptions) => {
   const { value, label, required } = props;
-  if (required && !value) {
+  if (required && (!value || (Array.isArray(value) && value.length === 0))) {
     throw new Error(`${label} is required.`);
   }
 };

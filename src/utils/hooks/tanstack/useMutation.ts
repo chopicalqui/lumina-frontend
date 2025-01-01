@@ -63,27 +63,19 @@ export const getStatusMessage = (
         severity: "error",
         message: "No network connection available.",
       });
-    } else if (
-      typeof data === "object" &&
-      "type" in (data ?? {}) &&
-      data?.type === "statusMessage"
-    ) {
+    } else if (typeof data === "object" && data?.type === "statusMessage") {
       result = new StatusMessage({
         severity: data?.severity,
         message: data?.message,
       });
     }
   } else if (isMutation && isSuccess) {
-    if (
-      typeof data === "object" &&
-      "type" in (data ?? {}) &&
-      data?.type === "statusMessage"
-    ) {
+    if (typeof data === "object" && data?.type === "statusMessage") {
       result = data as StatusMessage;
     } else {
       result = new StatusMessage({
         severity: "success",
-        message: "The operation was successful.",
+        message: data?.message ?? "The operation was successful.",
       });
     }
   }

@@ -31,14 +31,16 @@ import Switch, { SwitchOptions } from "./Switch";
 import DatePicker, { DatePickerOptions, DatePickerProps } from "./DatePicker";
 import dayjs from "dayjs";
 import Autocomplete, {
-  AutocompleteOptions,
   AutocompleteProps,
+  AutocompleteOptions,
 } from "./Autocomplete";
-import { AutoCompleteClass } from "../../utils/globals";
+import { AutoCompleteClass, DetailsDialogMode } from "../../utils/globals";
 
 export interface ControlFactoryProps {
   // The attribute name of the control.
   field: string;
+  // If true, the control is disabled.
+  disabled?: boolean;
   // The control factory's context returned by the useControlFactory hook.
   context: UseControlFactoryResult;
   // TODO: Add options for each control type.
@@ -54,13 +56,17 @@ const ControlFactory = React.memo(
   ({
     field,
     context,
+    disabled,
     textFieldOptions,
     switchOptions,
     datePickerOptions,
+    autoCompleteOptions,
   }: ControlFactoryOptions) => {
+    const mode = context.state.mode;
     const fieldValue = context.state.values[field];
     const fieldState = context.state.states[field];
     const fieldColumn = context.state.columns[field];
+    const disabledGlobal = disabled || mode === DetailsDialogMode.View;
     const { onChange, onBlur } = context;
     const { label: _tmp, ...datePickerProps } = datePickerOptions ?? {};
 
@@ -88,12 +94,17 @@ const ControlFactory = React.memo(
         newValue: any | any[] | null,
         _reason: AutocompleteChangeReason
       ) => onChange({ event, field, newValue }),
-      []
+      [field, onChange]
     );
     const onBlurTextField = React.useCallback(
       (
         event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>
       ) => onBlur({ event, field, newValue: null }),
+      [field, onBlur]
+    );
+    const onBlurAutoComplete = React.useCallback(
+      (event: React.FocusEvent<HTMLDivElement, Element>) =>
+        onBlur({ event, field, newValue: null }),
       [field, onBlur]
     );
 
@@ -108,7 +119,7 @@ const ControlFactory = React.memo(
 
     // TODO: Update this if statement to include new MUI control
     if (fieldColumn.type === "textfield") {
-      const { helperText, ...props } = options as TextFieldProps;
+      const { helperText, disabled, ...props } = options as TextFieldProps;
       return (
         <TextField
           {...props}
@@ -116,35 +127,41 @@ const ControlFactory = React.memo(
           value={fieldValue as string}
           error={fieldState.errorText !== undefined}
           helperText={fieldState.errorText ? fieldState.errorText : helperText}
+          disabled={disabledGlobal || disabled}
           onChange={onChangeTextField}
           onBlur={onBlurTextField}
         />
       );
     } else if (fieldColumn.type === "autocomplete") {
-      const { helperText, ...props } = options as AutocompleteOptions;
+      const { helperText, disabled, ...props } = options as AutocompleteOptions;
       return (
         <Autocomplete
           {...props}
-          ClassRef={AutoCompleteClass}
+          {...autoCompleteOptions}
+          value={fieldValue as AutoCompleteClass}
           error={fieldState.errorText !== undefined}
           helperText={
             fieldState.errorText ? fieldState.errorText : helperText?.toString()
           }
-          value={fieldValue as AutoCompleteClass}
+          disabled={disabledGlobal || disabled}
           onChange={onChangeAutoComplete}
+          onBlur={onBlurAutoComplete}
         />
       );
     } else if (fieldColumn.type === "switch") {
+      const { disabled, ...props } = options as SwitchOptions;
       return (
         <Switch
-          {...(options as SwitchOptions)}
+          {...props}
           {...switchOptions}
-          value={fieldValue}
+          checked={(fieldValue as boolean) ?? false}
+          disabled={disabledGlobal || disabled}
           onChange={onChangeSwitch}
         />
       );
     } else if (fieldColumn.type === "datepicker") {
-      const { helperText, ...props } = options as DatePickerOptions<any>;
+      const { helperText, disabled, ...props } =
+        options as DatePickerOptions<any>;
       return (
         <DatePicker
           {...props}
@@ -152,6 +169,7 @@ const ControlFactory = React.memo(
           value={fieldValue as dayjs.Dayjs}
           error={fieldState.errorText !== undefined}
           helperText={fieldState.errorText || helperText}
+          disabled={disabledGlobal || disabled}
           onChange={onChangeDatePicker}
           onBlur={onBlurTextField}
         />

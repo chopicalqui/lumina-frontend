@@ -22,11 +22,10 @@
 import React from "react";
 import { NamedModelBase } from "../common";
 import {
-  AutoCompleteClass,
   AutoCompleteOption,
-  getDefaultAutocompleteRenderInput,
   getFinalAutoCompleteValue,
   getFinalDayjs,
+  renderCellAutocompleteOptionList,
   valueGetterDate,
 } from "../../utils/globals";
 import { ChildQueryOptions } from "../../utils/hooks/tanstack/useQuery";
@@ -86,20 +85,18 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Scopes",
       type: "string",
       description: "The scopes associated with the access token.",
-      editable: true,
+      editable: false,
+      renderCell: renderCellAutocompleteOptionList,
     },
     mui: {
       autocomplete: {
         field: "scopes",
-        ClassRef: AutoCompleteClass,
         label: "Scopes",
         required: true,
-        freeSolo: false,
+        freeSolo: true,
         multiple: true,
-        options: [],
         queryUrl: URL_ME_SCOPES,
         queryKey: queryKeyScopes,
-        renderInput: getDefaultAutocompleteRenderInput,
         helperText: "The scopes associated with the access token.",
         getFinalValue: getFinalAutoCompleteValue,
       },
@@ -123,7 +120,7 @@ export const META_INFO: MetaInfoType[] = [
     dataGridInfo: {
       field: "expiration",
       headerName: "Expiration",
-      type: "dateTime",
+      type: "date",
       description: "The date when the access token expires.",
       valueGetter: valueGetterDate,
     },
@@ -173,7 +170,7 @@ export const META_INFO: MetaInfoType[] = [
 export class AccessToken extends NamedModelBase {
   public value?: string;
   public revoked: boolean;
-  public expiration: dayjs.Dayjs;
+  public expiration?: dayjs.Dayjs;
   public scopes: AutoCompleteOption[];
   public created_at?: dayjs.Dayjs;
 
@@ -182,7 +179,7 @@ export class AccessToken extends NamedModelBase {
     this.value = data.value;
     this.scopes = data.scopes;
     this.revoked = data.revoked ?? false;
-    this.expiration = dayjs(data.expiration);
+    this.expiration = data.expiration && dayjs(data.expiration);
     this.created_at = dayjs(data.created_at);
   }
 }

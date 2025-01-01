@@ -78,10 +78,9 @@ export type OnChangeEventType =
 /**
  * The different types of OnBlur events.
  */
-export type OnBlurEventType = React.FocusEvent<
-  HTMLInputElement | HTMLTextAreaElement,
-  Element
->;
+export type OnBlurEventType =
+  | React.FocusEvent<HTMLInputElement | HTMLTextAreaElement, Element>
+  | React.FocusEvent<HTMLDivElement, Element>;
 
 /*
  * The different types of reducer function actions.
@@ -337,7 +336,7 @@ export const handleOnChangeBlur = (
   if (!field) {
     throw new Error("Field must not be undefined.");
   }
-  const newValue = getControlValue(state, reducerOptions);
+  let newValue = getControlValue(state, reducerOptions);
   const errorOptions = {
     field,
     label: fieldColumn?.label,
@@ -380,6 +379,11 @@ export const handleOnChangeBlur = (
   } else if (fieldColumn?.type === "autocomplete") {
     let error: string | undefined = undefined;
     try {
+      // If the control looses focus, the errorOptions.value is set to the current value.
+      if (action === "ON_BLUR") {
+        newValue = fieldValue ?? null;
+        errorOptions.value = fieldValue ?? null;
+      }
       // Perform the default validation
       verifyAutocompleteDefault(errorOptions);
       // Perform the custom validation

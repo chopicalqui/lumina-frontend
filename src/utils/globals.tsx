@@ -19,7 +19,8 @@
  * @license GPLv3
  */
 
-import { AutocompleteRenderInputParams, TextField } from "@mui/material";
+import { Chip, Stack } from "@mui/material";
+import { GridRenderCellParams } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 
 // Define a model class type with a constructor
@@ -94,7 +95,7 @@ export const getEnumNames = (enumClass: EnumTypes) => {
 /**
  * The REST API returns the user role as a number. This function converts the number to an AutoCompleteOption.
  */
-export const getAutoCompleteOption = (
+export const getAutocompleteOption = (
   enumClass: EnumTypes,
   type?: any
 ): AutoCompleteOption => {
@@ -106,16 +107,29 @@ export const getAutoCompleteOption = (
 /**
  * This function is used to get the value of an auto-complete field.
  */
-export const valueGetterAutoCompleteOption = (
+export const valueGetterAutocompleteOption = (
   value: AutoCompleteOption
 ): string => value.label;
 
 /**
  * This function is used to get the value of an auto-complete list.
  */
-export const valueGetterAutoCompleteOptionList = (
+export const valueGetterAutocompleteOptionList = (
   value: AutoCompleteOption[]
 ): string[] => value.map((x) => x.label);
+
+/**
+ * This function is used to render the value of a Autocomplete DataGrid cell.
+ */
+export const renderCellAutocompleteOptionList = (
+  value: GridRenderCellParams<AutoCompleteOption[]>
+) => (
+  <Stack direction="row" spacing={1}>
+    {value?.value.map((x: AutoCompleteOption) => (
+      <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
+    ))}
+  </Stack>
+);
 
 /**
  * This function is used to get the value of a date field.
@@ -136,13 +150,6 @@ export const getCookieValue = (cookieName: string): string | null => {
   }
   return null;
 };
-
-/**
- * This function is used to get the default render input for the Autocomplete component.
- */
-export const getDefaultAutocompleteRenderInput = (
-  params: AutocompleteRenderInputParams
-) => <TextField {...params} />;
 
 /**
  * This function is used to get the final dayjs value.

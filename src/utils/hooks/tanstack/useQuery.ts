@@ -80,21 +80,20 @@ export const useQuery = <T>(
     refetchOnReconnect,
     metaInfo,
     queryKey,
+    disableAutoRefresh,
     ...options
   } = props;
   const refreshOptions = React.useMemo(
     () => ({
-      staleTime: props.disableAutoRefresh ? Infinity : staleTime,
-      gcTime: props.disableAutoRefresh ? Infinity : gcTime,
-      refetchInterval: props.disableAutoRefresh ? false : refetchInterval,
-      refetchOnWindowFocus: props.disableAutoRefresh
-        ? false
-        : refetchOnWindowFocus,
-      refetchOnMount: props.disableAutoRefresh ? "always" : refetchOnMount,
-      refetchOnReconnect: props.disableAutoRefresh ? false : refetchOnReconnect,
+      staleTime: disableAutoRefresh ? Infinity : staleTime,
+      gcTime: disableAutoRefresh ? Infinity : gcTime,
+      refetchInterval: disableAutoRefresh ? false : refetchInterval,
+      refetchOnWindowFocus: disableAutoRefresh ? false : refetchOnWindowFocus,
+      refetchOnMount: disableAutoRefresh ? "always" : refetchOnMount,
+      refetchOnReconnect: disableAutoRefresh ? false : refetchOnReconnect,
     }),
     [
-      props.disableAutoRefresh,
+      disableAutoRefresh,
       staleTime,
       gcTime,
       refetchInterval,

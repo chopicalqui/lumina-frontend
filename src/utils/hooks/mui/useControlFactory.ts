@@ -36,12 +36,14 @@ import {
   StateValueType,
 } from "../../../components/inputs/controlFactoryUtils";
 import { UseQueryForDataGridResult } from "../tanstack/useQuery";
+import { DetailsDialogMode } from "../../globals";
 
 /**
  * Creates the initial state for the control factory.
  */
 export const useInitialState = (
-  metaInfo: MetaInfoType[]
+  metaInfo: MetaInfoType[],
+  mode?: DetailsDialogMode
 ): ControlFactoryReducerState => {
   const columns = React.useMemo(() => createStateColumns(metaInfo), [metaInfo]);
   return React.useMemo(
@@ -51,9 +53,9 @@ export const useInitialState = (
       states: createInitialStateStates(columns),
       hasErrors: false,
       hasChanges: false,
-      mode: undefined,
+      mode,
     }),
-    [columns]
+    [columns, mode]
   );
 };
 
@@ -125,12 +127,13 @@ const controlFactoryReducer = (
  */
 export const useControlFactory = <T>(
   metaInfo: MetaInfoType[],
+  mode?: DetailsDialogMode,
   queryContext?: UseQueryForDataGridResult<T>,
   // The options for the onSubmit event handler.
   // You can either provide it as a hook parameter or as a parameter in the onSubmit function.
   onSubmitOptions?: OnSubmitOptionsType
 ): UseControlFactoryResult => {
-  const initialState = useInitialState(metaInfo);
+  const initialState = useInitialState(metaInfo, mode);
   const [state, dispatch] = React.useReducer(
     controlFactoryReducer,
     initialState

@@ -42,6 +42,7 @@ export const useQueryItems = <T>(
         queryKey: queryKey,
         queryFn: async () => axiosGet<T[]>(url),
         select: (data: T[]) => data.map((x) => new ClassRef(x)),
+        disableAutoRefresh: false,
         metaInfo: metaInfo,
         scope: scope,
       }),

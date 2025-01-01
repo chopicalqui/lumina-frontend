@@ -31,15 +31,19 @@ export interface SwitchOptions extends LuminaControlOptions, MuiSwitchProps {
   label: string;
 }
 
+/**
+ * Switch component that can be created by the ControlFactory component.
+ */
 const Switch: React.FC<SwitchOptions> = React.memo((props) => {
-  const { label } = props;
+  const { label, disabled } = props;
   const sx = React.useMemo(() => ({ width: "100%", ...props.sx }), [props.sx]);
 
   return (
     <FormControlLabel
-      control={<MuiSwitch {...props} sx={sx} />}
-      labelPlacement="top"
+      control={<MuiSwitch {...props} disabled={disabled} sx={sx} />}
       label={label}
+      labelPlacement="top"
+      disabled={disabled}
     />
   );
 });

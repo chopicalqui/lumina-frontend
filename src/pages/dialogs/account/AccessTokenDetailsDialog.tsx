@@ -69,6 +69,7 @@ const AccessTokenDetailsDialog = React.memo(
     // Obtain the control factory context.
     const controlContext = useControlFactory(
       queryContext.metaInfo,
+      context.mode,
       queryContext,
       React.useMemo(
         () => ({
@@ -89,6 +90,7 @@ const AccessTokenDetailsDialog = React.memo(
 
     const textFieldOptions = React.useMemo(
       () => ({
+        type: "password",
         slotProps: {
           input: {
             endAdornment: (
@@ -120,26 +122,31 @@ const AccessTokenDetailsDialog = React.memo(
         <Paper sx={{ p: 2, mb: 2 }}>
           <Grid container spacing={2}>
             <Grid size={12}>
-              <ControlFactory field="name" context={controlContext} />
+              <ControlFactory
+                field="name"
+                context={controlContext}
+                disabled={context.mode !== DetailsDialogMode.Add}
+              />
             </Grid>
             <Grid size={12}>
-              <ControlFactory field="scopes" context={controlContext} />
+              <ControlFactory
+                field="scopes"
+                context={controlContext}
+                disabled={context.mode !== DetailsDialogMode.Add}
+              />
             </Grid>
             <Grid size={6}>
-              <ControlFactory field="expiration" context={controlContext} />
+              <ControlFactory
+                field="expiration"
+                context={controlContext}
+                disabled={context.mode !== DetailsDialogMode.Add}
+              />
             </Grid>
             <Grid size={6}>
               <ControlFactory
                 field="revoked"
                 context={controlContext}
-                switchOptions={React.useMemo(
-                  () => ({
-                    type: "password",
-                    disabled:
-                      controlContext?.state?.mode !== DetailsDialogMode.Add,
-                  }),
-                  [controlContext.state.mode]
-                )}
+                disabled={context.mode !== DetailsDialogMode.Edit}
               />
             </Grid>
             {tokenValue && (

@@ -50,6 +50,9 @@ export interface DatePickerOptions<
   ) => void;
 }
 
+/**
+ * DatePicker component that can be created by the ControlFactory component.
+ */
 const DatePicker = React.memo((props: DatePickerOptions<any>) => {
   const theme = useTheme();
   const { required, label, error, helperText, readOnly, onBlur, ...other } =

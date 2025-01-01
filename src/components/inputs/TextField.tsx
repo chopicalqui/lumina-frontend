@@ -26,7 +26,7 @@ import { LuminaControlOptions } from "./common";
 export type TextFieldOptions = LuminaControlOptions & TextFieldProps;
 
 /**
- * Text area input control that can be created by the ControlFactory component.
+ * TextField component that can be created by the ControlFactory component.
  */
 const TextField: React.FC<TextFieldProps> = React.memo((props) => {
   const { label, ...textFieldProps } = props;
