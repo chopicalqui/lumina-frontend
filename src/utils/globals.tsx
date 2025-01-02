@@ -30,7 +30,7 @@ export type ClassType<T> = new (...args: any[]) => T;
  * This type is used to define the auto-complete options in the application.
  */
 export type AutoCompleteOption = {
-  id: string;
+  id: string | number;
   label: string;
 };
 
@@ -38,7 +38,7 @@ export type AutoCompleteOption = {
  * This class is used to define the auto-complete options in the application.
  */
 export class AutoCompleteClass implements AutoCompleteOption {
-  id: string;
+  id: string | number;
   label: string;
 
   constructor(data: AutoCompleteOption) {
@@ -122,10 +122,10 @@ export const valueGetterAutocompleteOptionList = (
  * This function is used to render the value of a Autocomplete DataGrid cell.
  */
 export const renderCellAutocompleteOptionList = (
-  value: GridRenderCellParams<AutoCompleteOption[]>
+  cell: GridRenderCellParams<AutoCompleteOption[]>
 ) => (
   <Stack direction="row" spacing={1}>
-    {value?.value.map((x: AutoCompleteOption) => (
+    {cell?.value.map((x: AutoCompleteOption) => (
       <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
     ))}
   </Stack>
@@ -162,3 +162,21 @@ export const getFinalDayjs = (value?: dayjs.Dayjs) =>
  */
 export const getFinalAutoCompleteValue = (value: AutoCompleteOption) =>
   Array.isArray(value) ? value.map((x) => x.id) : value.id;
+
+/*
+ * This function returns the enum values as an object.
+ */
+export const getAutocompleteOptions = (
+  enumClass: EnumTypes
+): AutoCompleteOption[] => {
+  const result = Object.keys(enumClass)
+    .filter((item) => !isNaN(+item))
+    .map((item) => {
+      const key = Number(item);
+      return {
+        label: enumClass[key].replace(/_/g, " "),
+        id: key,
+      };
+    });
+  return result;
+};

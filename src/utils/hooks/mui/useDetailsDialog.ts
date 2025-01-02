@@ -33,18 +33,25 @@ export interface UseDetailsDialogOptions {
   name: string;
 }
 
-interface UseDetailsDialogState extends UseDetailsDialogOptions, DialogProps {
+export interface DialogState {
   // The ID of the entity to display in the dialog.
   rowId?: GridRowId;
   // The mode of the dialog.
   mode?: DetailsDialogMode;
 }
 
+interface UseDetailsDialogState
+  extends UseDetailsDialogOptions,
+    DialogProps,
+    DialogState {}
+
 export interface DetailsDialogOptions extends UseDetailsDialogState {
+  // Closes the dialog.
   onClose: () => void;
 }
 
 export interface UseDetailsDialogResult extends DetailsDialogOptions {
+  // Opens the dialog.
   onOpen: (props: OnOpenOptions) => void;
 }
 
@@ -55,6 +62,9 @@ export interface OnOpenOptions extends DialogProps {
   mode: DetailsDialogMode;
 }
 
+/**
+ * This hook is used to obtain a dialog handler for the details dialog.
+ */
 export const useDetailsDialog = (
   props: UseDetailsDialogOptions
 ): UseDetailsDialogResult => {
@@ -63,10 +73,21 @@ export const useDetailsDialog = (
     name: props.name,
   });
 
+  /**
+   * Opens the dialog.
+   */
   const handleOpen = React.useCallback((props: OnOpenOptions) => {
-    setState((x: UseDetailsDialogState) => ({ ...x, ...props, open: true }));
+    setState((x: UseDetailsDialogState) => ({
+      ...x,
+      ...props,
+      rowId: props.mode === DetailsDialogMode.Add ? undefined : props.rowId,
+      open: true,
+    }));
   }, []);
 
+  /**
+   * Closes the dialog.
+   */
   const handleClose = React.useCallback(() => {
     setState((x: UseDetailsDialogState) => ({ ...x, open: false }));
   }, []);

@@ -24,7 +24,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { DetailsDialogOptions } from "../../../utils/hooks/mui/useDetailsDialog";
 import DetailsDialog from "../../../components/feedback/dialogs/DetailsDialog";
 import { useControlFactory } from "../../../utils/hooks/mui/useControlFactory";
-import { useQueryAccessTokenById } from "../../../models/account/access_token";
+import { useQueryAccessTokenById as useQueryByIdPrimary } from "../../../models/account/access_token";
 import ControlFactory from "../../../components/inputs/ControlFactory";
 import {
   Grid2 as Grid,
@@ -34,42 +34,53 @@ import {
 } from "@mui/material";
 import { useMutationDetailsDialog } from "../../../utils/hooks/tanstack/useMutationDetailsDialog";
 import {
-  queryKeyAccessTokens,
-  URL_ME_ACCESS_TOKENS,
+  queryKeyAccessTokens as queryKeyPrimary,
+  URL_ME_ACCESS_TOKENS as URL_PRIMARY,
 } from "../../../models/account/common";
 import { UseMutationAlert } from "../../../components/feedback/TanstackAlert";
 import { DetailsDialogMode } from "../../../utils/globals";
 
 const AccessTokenDetailsDialog = React.memo(
   ({ context }: { context: DetailsDialogOptions }) => {
-    const { rowId, ...props } = context;
+    const { rowId: _rowId, ...props } = context;
+    // We store the access token value in the local state.
+    const [tokenValue, setTokenValue] = React.useState<string | null>(null);
+    // Obtain the Tanstack mutation together with the dialog state. It allows updating/creating the record and
+    // managing the dialog's lifecycle.
+    const { mutation: mutationContext, state: dialogState } =
+      useMutationDetailsDialog(
+        React.useMemo(
+          () => ({
+            url: URL_PRIMARY,
+            queryKey: queryKeyPrimary,
+            dialogContext: context,
+            invalidateQueryKeys: [],
+            // The actual access token value is only returned when creating a new access token. In order to display
+            // the access token value, we store it in the local state.
+            onSuccess: (data: any, mode?: DetailsDialogMode) => {
+              if (mode === DetailsDialogMode.Add) {
+                setTokenValue(data.value);
+              }
+            },
+          }),
+          [context]
+        )
+      );
 
-    // Obtain the access token by ID.
-    const queryContext = useQueryAccessTokenById(
+    // Obtain the record by ID.
+    const queryContext = useQueryByIdPrimary(
       React.useMemo(
         () => ({
-          rowId: rowId,
+          rowId: dialogState.rowId,
         }),
-        [rowId]
-      )
-    );
-
-    // Obtain the Tanstack mutation to allow updating the access token.
-    const mutationContext = useMutationDetailsDialog(
-      React.useMemo(
-        () => ({
-          url: URL_ME_ACCESS_TOKENS,
-          mode: context.mode!,
-          invalidateQueryKeys: [queryKeyAccessTokens],
-        }),
-        [context.mode]
+        [dialogState.rowId]
       )
     );
 
     // Obtain the control factory context.
     const controlContext = useControlFactory(
       queryContext.metaInfo,
-      context.mode,
+      dialogState.mode,
       queryContext,
       React.useMemo(
         () => ({
@@ -78,7 +89,6 @@ const AccessTokenDetailsDialog = React.memo(
         [mutationContext.mutate]
       )
     );
-    const tokenValue = controlContext.state.values.value;
 
     // Copy the access token to the clipboard.
     const onAccessTokenCopy = React.useCallback(() => {
@@ -113,46 +123,48 @@ const AccessTokenDetailsDialog = React.memo(
     return (
       <DetailsDialog
         {...props}
+        mode={dialogState.mode}
         maxWidth="sm"
         fullWidth
         isLoading={queryContext.isLoading}
         controlContext={controlContext}
       >
         <UseMutationAlert {...mutationContext} />
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <Paper sx={{ p: 2 }}>
           <Grid container spacing={2}>
             <Grid size={12}>
               <ControlFactory
                 field="name"
                 context={controlContext}
-                disabled={context.mode !== DetailsDialogMode.Add}
+                disabled={dialogState.mode !== DetailsDialogMode.Add}
               />
             </Grid>
             <Grid size={12}>
               <ControlFactory
                 field="scopes"
                 context={controlContext}
-                disabled={context.mode !== DetailsDialogMode.Add}
+                disabled={dialogState.mode !== DetailsDialogMode.Add}
               />
             </Grid>
             <Grid size={6}>
               <ControlFactory
                 field="expiration"
                 context={controlContext}
-                disabled={context.mode !== DetailsDialogMode.Add}
+                disabled={dialogState.mode !== DetailsDialogMode.Add}
               />
             </Grid>
             <Grid size={6}>
               <ControlFactory
                 field="revoked"
                 context={controlContext}
-                disabled={context.mode !== DetailsDialogMode.Edit}
+                disabled={dialogState.mode !== DetailsDialogMode.Edit}
               />
             </Grid>
             {tokenValue && (
               <Grid size={12}>
                 <ControlFactory
                   field="value"
+                  value={tokenValue}
                   context={controlContext}
                   textFieldOptions={textFieldOptions}
                 />

@@ -29,6 +29,8 @@ import {
   valueGetterDate,
   getFinalDayjs,
   renderCellAutocompleteOptionList,
+  getFinalAutoCompleteValue,
+  getAutocompleteOptions,
 } from "../../utils/globals";
 import {
   ChildQueryOptions,
@@ -48,6 +50,7 @@ import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 import dayjs from "dayjs";
 import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
 import { useQueryItemById } from "../../utils/hooks/tanstack/useQueryItemById";
+import { GetErrorOptions } from "../../components/inputs/common";
 
 export const META_INFO: MetaInfoType[] = [
   {
@@ -130,6 +133,16 @@ export const META_INFO: MetaInfoType[] = [
       headerAlign: "center",
       renderCell: renderCellAutocompleteOptionList,
     },
+    mui: {
+      autocomplete: {
+        field: "roles",
+        label: "Roles",
+        multiple: true,
+        options: getAutocompleteOptions(AccountRole),
+        helperText: "The user's role memberships.",
+        getFinalValue: getFinalAutoCompleteValue,
+      },
+    },
   },
   {
     dataGridInfo: {
@@ -145,6 +158,15 @@ export const META_INFO: MetaInfoType[] = [
         label: "Active From",
         helperText: "The date from which onward the account can be used.",
         getFinalValue: getFinalDayjs,
+        getError: ({ value, state, label }: GetErrorOptions) => {
+          const activeFrom = value as dayjs.Dayjs | undefined;
+          const activeUntil = state.values.activeUntil as
+            | dayjs.Dayjs
+            | undefined;
+          if (activeFrom && activeUntil && activeUntil.isBefore(activeFrom)) {
+            return `The ${label} must be before the Active Until date.`;
+          }
+        },
       },
     },
   },
@@ -160,9 +182,15 @@ export const META_INFO: MetaInfoType[] = [
       datapicker: {
         field: "activeUntil",
         label: "Active Until",
-        disablePast: true,
         helperText: "The date until which the account can be used.",
         getFinalValue: getFinalDayjs,
+        getError: ({ value, state, label }: GetErrorOptions) => {
+          const activeFrom = state.values.activeFrom as dayjs.Dayjs | undefined;
+          const activeUntil = value as dayjs.Dayjs | undefined;
+          if (activeFrom && activeUntil && activeUntil.isBefore(activeFrom)) {
+            return `The ${label} must be after the Active From date.`;
+          }
+        },
       },
     },
   },

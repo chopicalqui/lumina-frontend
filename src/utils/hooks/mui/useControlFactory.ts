@@ -104,17 +104,6 @@ const controlFactoryReducer = (
       ...state,
       values: { ...state.values, ...content, ...result },
     };
-  } else if (action === "ON_SUBMIT") {
-    const newState = checkStateForErrors(state);
-    // If there are errors, we return the state.
-    if (newState.hasErrors) {
-      throw new Error(
-        "The on submit action should only be called when you are sure that there aren't any errors."
-      );
-    }
-    // If there are no errors, we obtain the final value and call the mutate function.
-    const result = getFinalState(newState);
-    options.onSubmitOptions?.mutate(result);
   } else if (action == "HIGHLIGHT_ERRORS") {
     const newState = checkStateForErrors(state);
     return newState;
@@ -183,16 +172,24 @@ export const useControlFactory = <T>(
    */
   const onSubmit = React.useCallback(
     (props?: OnSubmitOptionsType) => {
+      const submitOptions = { ...props, ...onSubmitOptions };
       // Check if there are errors in the form.
       const tmpState = checkStateForErrors(state);
       if (tmpState.hasErrors) {
         dispatch({ action: "HIGHLIGHT_ERRORS" });
         throw new Error("The form has errors.");
-      } else {
-        dispatch({
-          action: "ON_SUBMIT",
-          onSubmitOptions: props ?? onSubmitOptions,
-        });
+      } else if (submitOptions?.mutate) {
+        // If there are no errors, we obtain the final value and call the mutate function.
+        const result = getFinalState(state);
+        submitOptions?.mutate?.(
+          result /*{
+          onSuccess: (data) => {
+            if (mode === DetailsDialogMode.Add) {
+              updateValues(data as StateValueType);
+            }
+          },
+        }*/
+        );
       }
     },
     [dispatch, onSubmitOptions, state]

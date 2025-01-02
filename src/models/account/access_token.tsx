@@ -161,7 +161,8 @@ export const META_INFO: MetaInfoType[] = [
         label: "Access Token",
         disabled: true,
         noSubmit: true,
-        helperText: "The date when the access token was created.",
+        helperText:
+          "The actual access token value. Copy this value now as it will not be shown again.",
       },
     },
   },

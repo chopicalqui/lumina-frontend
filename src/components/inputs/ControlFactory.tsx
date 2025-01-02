@@ -35,12 +35,15 @@ import Autocomplete, {
   AutocompleteOptions,
 } from "./Autocomplete";
 import { AutoCompleteClass, DetailsDialogMode } from "../../utils/globals";
+import { ControlValueType } from "./controlFactoryUtils";
 
 export interface ControlFactoryProps {
   // The attribute name of the control.
   field: string;
   // If true, the control is disabled.
   disabled?: boolean;
+  // The current value of the control.
+  value?: ControlValueType;
   // The control factory's context returned by the useControlFactory hook.
   context: UseControlFactoryResult;
   // TODO: Add options for each control type.
@@ -55,6 +58,7 @@ export type ControlFactoryOptions = ControlFactoryProps;
 const ControlFactory = React.memo(
   ({
     field,
+    value,
     context,
     disabled,
     textFieldOptions,
@@ -124,7 +128,7 @@ const ControlFactory = React.memo(
         <TextField
           {...props}
           {...textFieldOptions}
-          value={fieldValue as string}
+          value={(value as string) ?? (fieldValue as string)}
           error={fieldState.errorText !== undefined}
           helperText={fieldState.errorText ? fieldState.errorText : helperText}
           disabled={disabledGlobal || disabled}
@@ -138,7 +142,9 @@ const ControlFactory = React.memo(
         <Autocomplete
           {...props}
           {...autoCompleteOptions}
-          value={fieldValue as AutoCompleteClass}
+          value={
+            (value as AutoCompleteClass) ?? (fieldValue as AutoCompleteClass)
+          }
           error={fieldState.errorText !== undefined}
           helperText={
             fieldState.errorText ? fieldState.errorText : helperText?.toString()
@@ -154,7 +160,7 @@ const ControlFactory = React.memo(
         <Switch
           {...props}
           {...switchOptions}
-          checked={(fieldValue as boolean) ?? false}
+          checked={(value as boolean) ?? (fieldValue as boolean) ?? false}
           disabled={disabledGlobal || disabled}
           onChange={onChangeSwitch}
         />
@@ -166,7 +172,7 @@ const ControlFactory = React.memo(
         <DatePicker
           {...props}
           {...datePickerProps}
-          value={fieldValue as dayjs.Dayjs}
+          value={(value as dayjs.Dayjs) ?? (fieldValue as dayjs.Dayjs) ?? null}
           error={fieldState.errorText !== undefined}
           helperText={fieldState.errorText || helperText}
           disabled={disabledGlobal || disabled}

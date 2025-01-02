@@ -89,7 +89,6 @@ export type StateActions =
   | "ON_CHANGE"
   | "ON_BLUR"
   | "UPDATE_VALUES"
-  | "ON_SUBMIT"
   | "HIGHLIGHT_ERRORS";
 
 // TODO: Update this type to include new MUI controls

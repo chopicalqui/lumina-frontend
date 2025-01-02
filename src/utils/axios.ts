@@ -65,10 +65,13 @@ export const axiosPost = async <TData, TVariables>(
     headers[CSRF_TOKEN_HEADER] = token;
   }
   return axiosClient
-    .post<
-      TData,
-      AxiosResponse<TData, StatusMessage>
-    >(url, data, { ...config, headers })
+    .post<TData, AxiosResponse<TData, StatusMessage>>(url, data, {
+      ...config,
+      headers,
+    })
+    .catch((error) => {
+      throw error.response.data as StatusMessage;
+    })
     .then((response) => response.data);
 };
 
@@ -86,10 +89,13 @@ export const axiosPatch = async <TData, TVariables>(
     headers[CSRF_TOKEN_HEADER] = token;
   }
   return axiosClient
-    .patch<
-      TData,
-      AxiosResponse<TData, StatusMessage>
-    >(url, data, { ...config, headers })
+    .patch<TData, AxiosResponse<TData, StatusMessage>>(url, data, {
+      ...config,
+      headers,
+    })
+    .catch((error) => {
+      throw error.response.data as StatusMessage;
+    })
     .then((response) => response.data);
 };
 
@@ -107,10 +113,13 @@ export const axiosPut = async <TData, TVariables>(
     headers[CSRF_TOKEN_HEADER] = token;
   }
   return axiosClient
-    .put<
-      TData,
-      AxiosResponse<TData, StatusMessage>
-    >(url, data, { ...config, headers })
+    .put<TData, AxiosResponse<TData, StatusMessage>>(url, data, {
+      ...config,
+      headers,
+    })
+    .catch((error) => {
+      throw error.response.data as StatusMessage;
+    })
     .then((response) => response.data);
 };
 
@@ -128,5 +137,8 @@ export const axiosDelete = async <T>(
   }
   return axiosClient
     .delete<T, AxiosResponse<T, StatusMessage>>(url, { ...config, headers })
+    .catch((error) => {
+      throw error.response.data as StatusMessage;
+    })
     .then((response) => response.data);
 };

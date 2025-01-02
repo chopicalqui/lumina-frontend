@@ -25,17 +25,22 @@ import { DetailsDialogMode } from "../../globals";
 import { useMutation } from "./useMutation";
 import { axiosPatch, axiosPost, axiosPut } from "../../axios";
 import { queryClient } from "../../consts";
+import { DetailsDialogOptions, DialogState } from "../mui/useDetailsDialog";
 
 /**
  * The properties for the useMutationDetailsDialog hook.
  */
 export interface UseMutationDetailsDialog {
   // The mode of the dialog.
-  mode: DetailsDialogMode;
+  dialogContext: DetailsDialogOptions;
   // The URL to send the data to.
   url: string;
+  // The query key of the given URL.
+  queryKey: QueryKey;
   // The keys to invalidate.
   invalidateQueryKeys?: QueryKey[];
+  // The success handler.
+  onSuccess?: (data: any, mode?: DetailsDialogMode) => void;
 }
 
 /**
@@ -44,8 +49,24 @@ export interface UseMutationDetailsDialog {
 export const useMutationDetailsDialog = <TData, TVariables>(
   props: UseMutationDetailsDialog
 ) => {
+  /**
+   * State that allows managing the dialog context within the component.
+   */
+  const [state, setDialogState] = React.useState<DialogState>(
+    React.useMemo(
+      () => ({
+        rowId: props.dialogContext.rowId,
+        mode: props.dialogContext.mode ?? DetailsDialogMode.View,
+      }),
+      [props.dialogContext.rowId, props.dialogContext.mode]
+    )
+  );
+
+  /**
+   * Obtain the mutation function based on the mode.
+   */
   const mutationFn: MutationFunction<TData, TVariables> = React.useMemo(() => {
-    switch (props.mode) {
+    switch (state.mode) {
       case DetailsDialogMode.Add:
         return (data: TVariables) =>
           axiosPost<TData, TVariables>(props.url, data);
@@ -56,19 +77,39 @@ export const useMutationDetailsDialog = <TData, TVariables>(
         return (data: TVariables) =>
           axiosPatch<TData, TVariables>(props.url, data);
     }
-  }, [props.mode, props.url]);
+  }, [state.mode, props.url]);
 
+  /**
+   * The success handler for the mutation.
+   */
   const onSuccess = React.useCallback(
-    () =>
-      props?.invalidateQueryKeys?.forEach((queryKey: QueryKey) =>
-        queryClient.invalidateQueries({ queryKey })
-      ),
-    [props?.invalidateQueryKeys]
+    (data: any) => {
+      props?.onSuccess?.(data, state.mode);
+      // Invalidate the query keys.
+      props?.invalidateQueryKeys
+        ?.filter((queryKey: QueryKey) => queryKey !== props.queryKey)
+        .forEach((queryKey: QueryKey) =>
+          queryClient.invalidateQueries({ queryKey })
+        );
+      queryClient.invalidateQueries({ queryKey: props.queryKey });
+      if (state.mode === DetailsDialogMode.Add) {
+        // We switch the dialog's mode to edit after adding a new record.
+        setDialogState((x: DialogState) => ({
+          ...x,
+          rowId: data.id, // Causes the details dialog to re-render and fetch the new data from the backend.
+          mode: DetailsDialogMode.Edit,
+        }));
+      }
+    },
+    [state.mode, setDialogState, props]
   );
-  // Obtain handler for updating the backend
+
+  /**
+   * Obtain handler for updating the backend
+   */
   const mutation = useMutation(
     React.useMemo(() => ({ mutationFn, onSuccess }), [mutationFn, onSuccess])
   );
 
-  return mutation;
+  return React.useMemo(() => ({ mutation, state }), [mutation, state]);
 };

@@ -47,7 +47,7 @@ export const NAVIGATION: Navigation = [
   },
   {
     segment: PageEnum.access_tokens,
-    title: "Access Token",
+    title: "Access Tokens",
     icon: <TimelineIcon />,
   },
 ];

@@ -21,47 +21,50 @@
 
 import React from "react";
 import { DetailsDialogOptions } from "../../../utils/hooks/mui/useDetailsDialog";
-import DetailsDialog, {
-  Item,
-} from "../../../components/feedback/dialogs/DetailsDialog";
-import { useQueryAccountById } from "../../../models/account/account";
+import { useQueryAccountById as useQueryByIdPrimary } from "../../../models/account/account";
 import { useControlFactory } from "../../../utils/hooks/mui/useControlFactory";
 import { Grid2 as Grid, Paper } from "@mui/material";
 import ControlFactory from "../../../components/inputs/ControlFactory";
 import { useMutationDetailsDialog } from "../../../utils/hooks/tanstack/useMutationDetailsDialog";
-import { queryKeyAccounts, URL_ACCOUNTS } from "../../../models/account/common";
+import {
+  queryKeyAccounts as queryKeyPrimary,
+  URL_ACCOUNTS as URL_PRIMARY,
+} from "../../../models/account/common";
 import { UseMutationAlert } from "../../../components/feedback/TanstackAlert";
+import DetailsDialog from "../../../components/feedback/dialogs/DetailsDialog";
 
 const AccountDetailsDialog = React.memo(
   ({ context }: { context: DetailsDialogOptions }) => {
-    const { rowId, ...props } = context;
+    const { rowId: _rowId, ...props } = context;
+    // Obtain the Tanstack mutation together with the dialog state. It allows updating/creating the record and
+    // managing the dialog's lifecycle.
+    const { mutation: mutationContext, state: dialogState } =
+      useMutationDetailsDialog(
+        React.useMemo(
+          () => ({
+            url: URL_PRIMARY,
+            queryKey: queryKeyPrimary,
+            dialogContext: context,
+            invalidateQueryKeys: [],
+          }),
+          [context]
+        )
+      );
 
-    // Obtain the access token by ID.
-    const queryContext = useQueryAccountById(
+    // Obtain the record by ID.
+    const queryContext = useQueryByIdPrimary(
       React.useMemo(
         () => ({
-          rowId,
+          rowId: dialogState.rowId,
         }),
-        [rowId]
-      )
-    );
-
-    // Obtain the Tanstack mutation to allow updating the account.
-    const mutationContext = useMutationDetailsDialog(
-      React.useMemo(
-        () => ({
-          url: URL_ACCOUNTS,
-          mode: context.mode!,
-          invalidateQueryKeys: [queryKeyAccounts],
-        }),
-        [context.mode]
+        [dialogState.rowId]
       )
     );
 
     // Obtain the control factory context.
     const controlContext = useControlFactory(
       queryContext.metaInfo,
-      context.mode,
+      dialogState.mode,
       queryContext,
       React.useMemo(
         () => ({
@@ -74,6 +77,7 @@ const AccountDetailsDialog = React.memo(
     return (
       <DetailsDialog
         {...props}
+        mode={dialogState.mode}
         maxWidth="md"
         fullWidth
         isLoading={queryContext.isLoading}
@@ -89,7 +93,7 @@ const AccountDetailsDialog = React.memo(
               <ControlFactory field="email" context={controlContext} />
             </Grid>
             <Grid size={8}>
-              <Item>roles</Item>
+              <ControlFactory field="roles" context={controlContext} />
             </Grid>
             <Grid size={4}>
               <ControlFactory field="lastLogin" context={controlContext} />
