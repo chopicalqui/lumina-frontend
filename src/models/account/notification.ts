@@ -26,9 +26,9 @@ import { NamedModelBase } from "../common";
  * Data class for notifications.
  */
 export class Notification extends NamedModelBase {
-  public message: string;
-  public date?: dayjs.Dayjs;
-  public read: boolean;
+  public readonly message: string;
+  public readonly date?: dayjs.Dayjs;
+  public readonly read: boolean;
 
   constructor(notificationData: any) {
     super(notificationData.subject, notificationData.id);

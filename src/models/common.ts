@@ -27,7 +27,7 @@ import { Dayjs } from "dayjs";
  * This class is used by all Lumina API model classes to provide a common interface for all Lumina API model classes.
  */
 export abstract class ModelBase {
-  constructor(public id: string | null) {}
+  constructor(public readonly id: string | null) {}
 
   public getQueryId(): string {
     return this.id ?? "";
@@ -39,7 +39,7 @@ export abstract class ModelBase {
  */
 export abstract class NamedModelBase extends ModelBase {
   constructor(
-    public name: string,
+    public readonly name: string,
     id: string | null
   ) {
     super(id);

@@ -26,6 +26,7 @@ import {
   getFinalAutoCompleteValue,
   getFinalDayjs,
   renderCellAutocompleteOptionList,
+  valueGetterAutocompleteOptionList,
   valueGetterDate,
 } from "../../utils/globals";
 import { ChildQueryOptions } from "../../utils/hooks/tanstack/useQuery";
@@ -42,7 +43,14 @@ import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 import dayjs from "dayjs";
 import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
 import { useQueryItemById } from "../../utils/hooks/tanstack/useQueryItemById";
+import { GridRenderCellParams } from "@mui/x-data-grid";
 
+/**
+ * Core model class for the AccessToken model.
+ *
+ * This class is used by DataGrid components to correctly display and interact with the data. In addition,
+ * it can be used by the useControlFactory hook and ControlFactory component to create form fields.
+ */
 export const META_INFO: MetaInfoType[] = [
   {
     visibleDataGrid: false,
@@ -86,7 +94,17 @@ export const META_INFO: MetaInfoType[] = [
       type: "string",
       description: "The scopes associated with the access token.",
       editable: false,
-      renderCell: renderCellAutocompleteOptionList,
+      /**
+       * Scopes is an object and as a result, we need to use a custom valueGetter to obtain the label and return a string.
+       * This string is used by the DataGrid to filter, sort and export the data.
+       */
+      valueGetter: valueGetterAutocompleteOptionList,
+      /**
+       * Per default, renderCell uses the output of valueGetter to render the cell. Nevertheless,
+       * we can override this behavior by providing a custom renderCell function.
+       */
+      renderCell: (cell: GridRenderCellParams<AutoCompleteOption[]>) =>
+        renderCellAutocompleteOptionList(cell, "scopes"),
     },
     mui: {
       autocomplete: {
@@ -169,11 +187,11 @@ export const META_INFO: MetaInfoType[] = [
 ];
 
 export class AccessToken extends NamedModelBase {
-  public value?: string;
-  public revoked: boolean;
-  public expiration?: dayjs.Dayjs;
-  public scopes: AutoCompleteOption[];
-  public created_at?: dayjs.Dayjs;
+  public readonly value?: string;
+  public readonly revoked: boolean;
+  public readonly expiration?: dayjs.Dayjs;
+  public readonly scopes: AutoCompleteOption[];
+  public readonly created_at?: dayjs.Dayjs;
 
   constructor(data: any) {
     super(data.name, data.id);

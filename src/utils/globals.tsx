@@ -19,7 +19,7 @@
  * @license GPLv3
  */
 
-import { Chip, Stack } from "@mui/material";
+import { Chip, Link, Stack } from "@mui/material";
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 
@@ -116,26 +116,40 @@ export const valueGetterAutocompleteOption = (
  */
 export const valueGetterAutocompleteOptionList = (
   value: AutoCompleteOption[]
-): string[] => value.map((x) => x.label);
+): string => value.map((x) => x.label).join("; ");
 
 /**
  * This function is used to render the value of a Autocomplete DataGrid cell.
  */
 export const renderCellAutocompleteOptionList = (
-  cell: GridRenderCellParams<AutoCompleteOption[]>
-) => (
-  <Stack direction="row" spacing={1}>
-    {cell?.value.map((x: AutoCompleteOption) => (
-      <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
-    ))}
-  </Stack>
-);
+  cell: GridRenderCellParams<any>,
+  rowName: keyof typeof cell.row
+) => {
+  // Obtain raw data from the cell
+  if (rowName in cell.row) {
+    const result = cell.row[rowName] as AutoCompleteOption[];
+    return (
+      <Stack direction="row" spacing={1}>
+        {result.map((x: AutoCompleteOption) => (
+          <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
+        ))}
+      </Stack>
+    );
+  }
+};
 
 /**
  * This function is used to get the value of a date field.
  */
 export const valueGetterDate = (value?: dayjs.Dayjs): Date | undefined =>
   value?.toDate();
+
+/**
+ * This function renders an email DataGrid column cell as a clickable link.
+ */
+export const renderCellEmail = (cell: GridRenderCellParams<any>) => (
+  <Link href={`mailto:${cell.value}`}>{cell.value}</Link>
+);
 
 /**
  * Returns the value of a cookie by its name.
