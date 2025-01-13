@@ -54,11 +54,13 @@ export abstract class NamedModelBase extends ModelBase {
  */
 export class StatusMessage {
   type?: string;
+  status?: number;
   severity: AlertColor;
   message: string;
 
   constructor(data: any) {
     this.type = data.type;
+    this.status = data.status;
     this.severity = data.severity;
     this.message = data.message;
   }

@@ -104,7 +104,7 @@ export const META_INFO: MetaInfoType[] = [
        * we can override this behavior by providing a custom renderCell function.
        */
       renderCell: (cell: GridRenderCellParams<AutoCompleteOption[]>) =>
-        renderCellAutocompleteOptionList(cell, "scopes"),
+        renderCellAutocompleteOptionList(cell),
     },
     mui: {
       autocomplete: {

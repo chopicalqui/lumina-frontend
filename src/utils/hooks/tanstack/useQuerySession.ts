@@ -23,20 +23,22 @@ import React from "react";
 import { useQueryMe } from "../../../models/account/account";
 import { API_PATH_PREFIX, ORG_LOGO, ORG_NAME, ORG_URL } from "../../consts";
 import { Authentication, Session } from "@toolpad/core/AppProvider";
+import { logoutSession } from "../../axios";
 
 // This custom hook can be used to access the information of the currently logged in user.
 export const useQuerySession = () => {
   const meQuery = useQueryMe();
   const me = meQuery.data;
+  const { id, email, image, name } = me ?? {};
   const session: Session | null = React.useMemo(
     () =>
       meQuery.isSuccess
         ? {
             user: {
-              id: me!.id,
-              email: me!.email,
-              image: me!.image,
-              name: me!.name,
+              id,
+              email,
+              image,
+              name,
             },
             org: {
               name: ORG_NAME,
@@ -45,7 +47,7 @@ export const useQuerySession = () => {
             },
           }
         : null,
-    [me, meQuery.isSuccess]
+    [id, email, image, name, meQuery.isSuccess]
   );
   const authentication = React.useMemo<Authentication>(() => {
     return {
@@ -53,7 +55,7 @@ export const useQuerySession = () => {
         window.location.assign(`${API_PATH_PREFIX}/redirect-login`);
       },
       signOut: () => {
-        window.location.assign(`${API_PATH_PREFIX}/logout`);
+        logoutSession();
       },
     };
   }, []);

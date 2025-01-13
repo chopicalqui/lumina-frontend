@@ -26,7 +26,7 @@ import {
   UseQueryResult as UseQueryResultTanstack,
   QueryKey,
 } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import { getStatusMessage } from "./useMutation";
 import { StatusMessage } from "../../../models/common";
 import { ScopeEnum } from "../../globals";
@@ -56,12 +56,14 @@ export interface UseQueryDataGridType<T> extends UseQueryType<T> {
 
 interface IUseQueryResult {
   queryKey: QueryKey;
+  // TODO: statusMessage should be removed and information should always be populated directly by error in error.response.data
   statusMessage: StatusMessage | undefined;
 }
 interface IUseQueryMetaInfo extends ChildQueryOptions {
   metaInfo: MetaInfoType[];
 }
-export type UseQueryResult<T> = IUseQueryResult & UseQueryResultTanstack<T>;
+export type UseQueryResult<T> = IUseQueryResult &
+  UseQueryResultTanstack<T, AxiosError<StatusMessage>>;
 export type UseQueryForDataGridResult<T> = UseQueryResult<T> &
   IUseQueryMetaInfo;
 
@@ -108,6 +110,13 @@ export const useQuery = <T>(
     ...refreshOptions,
     queryKey: queryKey,
     enabled: options.enabled ?? true,
+    retry: React.useCallback((failureCount: number, error: Error) => {
+      // Abort retries if the error status code is 401
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        return false; // Do not retry
+      }
+      return failureCount < 3; // Retry up to 3 times for other errors
+    }, []),
   }) as UseQueryResultTanstack<T, AxiosError<StatusMessage>>;
 
   statusMessage = React.useMemo(

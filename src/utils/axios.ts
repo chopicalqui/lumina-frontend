@@ -19,11 +19,16 @@
  * @license GPLv3
  */
 
-import { AxiosRequestConfig, AxiosResponse } from "axios";
+import { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { axiosClient } from "./consts";
 import { StatusMessage } from "../models/common";
 import { getCookieValue } from "./globals";
-import { CSRF_TOKEN_HEADER } from "./consts";
+import { CSRF_TOKEN_HEADER, queryClient } from "./consts";
+
+/**
+ * The query key for the account me query.
+ */
+export const queryKeyAccountMe = ["me"];
 
 /**
  * This function is used to issue a GET request to the server.
@@ -70,7 +75,7 @@ export const axiosPost = async <TData, TVariables>(
       headers,
     })
     .catch((error) => {
-      throw error.response.data as StatusMessage;
+      throw error as AxiosError<StatusMessage>;
     })
     .then((response) => response.data);
 };
@@ -94,7 +99,7 @@ export const axiosPatch = async <TData, TVariables>(
       headers,
     })
     .catch((error) => {
-      throw error.response.data as StatusMessage;
+      throw error as AxiosError<StatusMessage>;
     })
     .then((response) => response.data);
 };
@@ -118,7 +123,7 @@ export const axiosPut = async <TData, TVariables>(
       headers,
     })
     .catch((error) => {
-      throw error.response.data as StatusMessage;
+      throw error as AxiosError<StatusMessage>;
     })
     .then((response) => response.data);
 };
@@ -138,7 +143,29 @@ export const axiosDelete = async <T>(
   return axiosClient
     .delete<T, AxiosResponse<T, StatusMessage>>(url, { ...config, headers })
     .catch((error) => {
-      throw error.response.data as StatusMessage;
+      throw error as AxiosError<StatusMessage>;
     })
     .then((response) => response.data);
+};
+
+/**
+ * Renews the current session by sending a request to the server.
+ */
+export const renewSession = () => {
+  axiosPost("/renew")
+    .then(() => queryClient.invalidateQueries({ queryKey: queryKeyAccountMe }))
+    .catch((reason: AxiosError<StatusMessage>) => {
+      if (reason.response?.status === 401) {
+        window.location.href = "/";
+      }
+    });
+};
+
+/**
+ * Invalidates the current session by sending a request to the server.
+ */
+export const logoutSession = () => {
+  axiosPost("/logout")
+    .then(() => (window.location.href = "/"))
+    .catch(() => (window.location.href = "/"));
 };

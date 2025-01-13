@@ -39,13 +39,8 @@ import {
   useQuery,
 } from "../../utils/hooks/tanstack/useQuery";
 import { NamedModelBase, verifyEmail } from "../common";
-import {
-  queryKeyAccounts,
-  queryKeyAccountMe,
-  URL_ACCOUNTS,
-  URL_ACCOUNTS_ME,
-} from "./common";
-import { axiosDelete, axiosGet } from "../../utils/axios";
+import { queryKeyAccounts, URL_ACCOUNTS, URL_ACCOUNTS_ME } from "./common";
+import { axiosDelete, axiosGet, queryKeyAccountMe } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
@@ -147,7 +142,7 @@ export const META_INFO: MetaInfoType[] = [
        * we can override this behavior by providing a custom renderCell function.
        */
       renderCell: (cell: GridRenderCellParams<AutoCompleteOption[]>) =>
-        renderCellAutocompleteOptionList(cell, "roles"),
+        renderCellAutocompleteOptionList(cell),
     },
     mui: {
       autocomplete: {
@@ -157,6 +152,25 @@ export const META_INFO: MetaInfoType[] = [
         options: getAutocompleteOptions(AccountRole),
         helperText: "The user's role memberships.",
         getFinalValue: getFinalAutoCompleteValue,
+      },
+    },
+  },
+  {
+    dataGridInfo: {
+      field: "lastLogin",
+      headerName: "Last Login",
+      type: "dateTime",
+      description: "The date [UTC] the user logged in the last time.",
+      valueGetter: valueGetterDate,
+    },
+    mui: {
+      datapicker: {
+        field: "lastLogin",
+        label: "Last Login",
+        required: false,
+        disabled: true,
+        noSubmit: true,
+        helperText: "The date the user logged in the last time.",
       },
     },
   },
@@ -216,25 +230,6 @@ export const META_INFO: MetaInfoType[] = [
       },
     },
   },
-  {
-    dataGridInfo: {
-      field: "lastLogin",
-      headerName: "Last Login",
-      type: "dateTime",
-      description: "The date [UTC] the user logged in the last time.",
-      valueGetter: valueGetterDate,
-    },
-    mui: {
-      datapicker: {
-        field: "lastLogin",
-        label: "Last Login",
-        required: false,
-        disabled: true,
-        noSubmit: true,
-        helperText: "The date the user logged in the last time.",
-      },
-    },
-  },
 ];
 
 export class AccountLookup {
@@ -273,6 +268,7 @@ export class Account extends AccountRead {
   public readonly sidebarCollapsed: boolean;
   public readonly tableDensity: string;
   public readonly image: string;
+  public readonly expiration: Date;
   private readonly _roles: AccountRole[];
 
   constructor(data: any) {
@@ -281,6 +277,7 @@ export class Account extends AccountRead {
     this.sidebarCollapsed = data.sidebar_collapsed;
     this.tableDensity = data.table_density;
     this.image = data.avatar;
+    this.expiration = new Date(data.expiration);
     this._roles = data.roles;
   }
 
@@ -330,7 +327,6 @@ export const useQueryMe = () =>
       () => ({
         queryKey: queryKeyAccountMe,
         disableAutoRefresh: true,
-        retry: 0,
         queryFn: async () => axiosGet<Account>(URL_ACCOUNTS_ME),
         select: (data: Account) => new Account(data),
       }),

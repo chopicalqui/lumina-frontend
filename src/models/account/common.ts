@@ -19,9 +19,10 @@
  * @license GPLv3
  */
 
+import { queryKeyAccountMe } from "../../utils/axios";
+
 // Query keys for accounts
 export const queryKeyAccounts = ["accounts"];
-export const queryKeyAccountMe = ["me"];
 export const queryKeyAccountMeNotifications = [
   ...queryKeyAccountMe,
   "notifications",

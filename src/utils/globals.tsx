@@ -56,7 +56,7 @@ export enum AccountRole {
   // Full administrative access role
   Admin = 200,
   // Permission to create access tokens
-  Api = 300,
+  Api = 10000,
 }
 
 /*
@@ -122,20 +122,16 @@ export const valueGetterAutocompleteOptionList = (
  * This function is used to render the value of a Autocomplete DataGrid cell.
  */
 export const renderCellAutocompleteOptionList = (
-  cell: GridRenderCellParams<any>,
-  rowName: keyof typeof cell.row
+  cell: GridRenderCellParams<any>
 ) => {
-  // Obtain raw data from the cell
-  if (rowName in cell.row) {
-    const result = cell.row[rowName] as AutoCompleteOption[];
-    return (
-      <Stack direction="row" spacing={1}>
-        {result.map((x: AutoCompleteOption) => (
-          <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
-        ))}
-      </Stack>
-    );
-  }
+  const result = cell.row[cell.field] as AutoCompleteOption[];
+  return (
+    <Stack direction="row" spacing={1}>
+      {result.map((x: AutoCompleteOption) => (
+        <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
+      ))}
+    </Stack>
+  );
 };
 
 /**
@@ -149,6 +145,15 @@ export const valueGetterDate = (value?: dayjs.Dayjs): Date | undefined =>
  */
 export const renderCellEmail = (cell: GridRenderCellParams<any>) => (
   <Link href={`mailto:${cell.value}`}>{cell.value}</Link>
+);
+
+/**
+ * This function renders an URL DataGrid column cell as a clickable link.
+ */
+export const renderUrl = (cell: GridRenderCellParams<any>) => (
+  <Link href={`mailto:${cell.value}`} target="_blank" rel="noreferrer">
+    {cell.value}
+  </Link>
 );
 
 /**
