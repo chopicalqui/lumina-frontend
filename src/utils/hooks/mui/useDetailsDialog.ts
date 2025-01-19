@@ -31,6 +31,8 @@ export interface UseDialogResult extends OnOpenOptions {
 export interface UseDetailsDialogOptions {
   // The name of the entity to display in the dialog. This will be used in the title.
   name: string;
+  // If true, the dialog will display an "Add & Close" button.
+  displayAddAndCloseButton?: boolean;
 }
 
 export interface DialogState {
@@ -51,6 +53,7 @@ export interface DetailsDialogOptions extends UseDetailsDialogState {
 }
 
 export interface UseDetailsDialogResult extends DetailsDialogOptions {
+  displayAddAndCloseButton: boolean;
   // Opens the dialog.
   onOpen: (props: OnOpenOptions) => void;
 }
@@ -95,9 +98,10 @@ export const useDetailsDialog = (
   return React.useMemo(
     () => ({
       ...state,
+      displayAddAndCloseButton: props.displayAddAndCloseButton ?? true,
       onClose: handleClose,
       onOpen: handleOpen,
     }),
-    [state, handleClose, handleOpen]
+    [state, handleClose, handleOpen, props.displayAddAndCloseButton]
   );
 };

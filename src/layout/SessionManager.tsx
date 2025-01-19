@@ -19,6 +19,7 @@
  * @license GPLv3
  */
 import React from "react";
+import { throttle } from "lodash";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Account } from "../models/account/account";
 import {
@@ -33,12 +34,14 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { renewSession, logoutSession } from "../utils/axios";
+import { logoutSession } from "../utils/axios";
 import {
   SESSION_TIMEOUT as SESSION_TIMEOUT_SECONDS,
   SESSION_TIMEOUT_BUFFER as SESSION_TIMEOUT_BUFFER_SECONDS,
   SESSION_TIMEOUT_WARNING as SESSION_TIMEOUT_WARNING_SECONDS,
 } from "../utils/consts";
+import { useRenewMutation } from "../utils/hooks/tanstack/useRenewMutation";
+import { UseMutationAlert } from "../components/feedback/TanstackAlert";
 
 const SESSION_TIMEOUT = SESSION_TIMEOUT_SECONDS * 1000;
 const SESSION_TIMEOUT_BUFFER = SESSION_TIMEOUT_BUFFER_SECONDS * 1000;
@@ -108,6 +111,7 @@ const CountdownProgress = React.memo(
  */
 export const SessionManager = React.memo(
   ({ account }: { account?: Account }) => {
+    const mutationRenew = useRenewMutation();
     // State that is updated which each user activity (mouse movement, key press).
     const [lastActivity, setLastActivity] = React.useState(Date.now());
     // State that defines when the component should terminate the session. It is also used to display the session
@@ -125,6 +129,7 @@ export const SessionManager = React.memo(
           : SESSION_TIMEOUT) - SESSION_TIMEOUT_BUFFER,
       [account, lastActivity]
     );
+    const openDialog = terminateAt !== undefined;
     const isAuthenticated =
       account !== undefined &&
       new Date().getTime() < account.expiration.getTime();
@@ -135,7 +140,9 @@ export const SessionManager = React.memo(
      */
     React.useEffect(() => {
       if (!isAuthenticated) return;
-      const updateActivity = () => setLastActivity(Date.now());
+      // We use several useEffect hooks in this component. We have to throttle the updateActivity function to avoid
+      // that these hooks are called too often and cannot perform their cleanups in time
+      const updateActivity = throttle(() => setLastActivity(Date.now()), 1000);
 
       window.addEventListener("mousemove", updateActivity);
       window.addEventListener("keydown", updateActivity);
@@ -153,13 +160,13 @@ export const SessionManager = React.memo(
      */
     React.useEffect(() => {
       // If the user is not logged in, then we do not need to show the session expiration warning.
-      if (!isAuthenticated || terminateAt !== undefined) return;
+      if (!isAuthenticated || openDialog) return;
       const timer = setTimeout(
         () => setTerminateAt(new Date().getTime() + SESSION_TIMEOUT_WARNING),
         VIRTUAL_SESSION_DURATION
       );
       return () => clearTimeout(timer);
-    }, [lastActivity, isAuthenticated, terminateAt]);
+    }, [lastActivity, isAuthenticated, openDialog]);
 
     /**
      * If a user is active at time t, then we need to ensure that the session remains active until t + SESSION_TIMEOUT.
@@ -167,11 +174,15 @@ export const SessionManager = React.memo(
      * Hence, this hook initializes a timer that will automatically renew the current session before it expires.
      */
     React.useEffect(() => {
-      const timer = setTimeout(() => {
-        renewSession();
-      }, timeBetweenLastActivityAndExpiration);
-      return () => clearTimeout(timer);
-    }, [timeBetweenLastActivityAndExpiration]);
+      if (!isAuthenticated) return;
+      const timer = setTimeout(
+        () => mutationRenew.mutate(undefined),
+        timeBetweenLastActivityAndExpiration
+      );
+      return () => {
+        clearTimeout(timer);
+      };
+    }, [isAuthenticated, mutationRenew, timeBetweenLastActivityAndExpiration]);
 
     /**
      * Once we have an termination date, we update the time remaining every second and once, the time remaining is 0,
@@ -200,8 +211,8 @@ export const SessionManager = React.memo(
      */
     const handleRenew = React.useCallback(async () => {
       setTerminateAt(undefined);
-      renewSession();
-    }, []);
+      mutationRenew.mutate(undefined);
+    }, [mutationRenew]);
 
     /**
      * Handles the manual logout of the session.
@@ -212,55 +223,58 @@ export const SessionManager = React.memo(
     }, []);
 
     return (
-      <Dialog
-        open={isAuthenticated && terminateAt !== undefined}
-        maxWidth="xs"
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <WarningAmberIcon color="warning" />
-            <Typography variant="h6" component="span">
-              Session Expiration Warning
-            </Typography>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Your session will expire in:
-          </DialogContentText>
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            marginY={2} // Adds vertical margin for spacing
-          >
-            <CountdownProgress timeRemaining={timeRemaining} />
-          </Box>
-          <DialogContentText id="alert-dialog-description">
-            To continue your session, click the <strong>Renew Session</strong>{" "}
-            button below. If you do nothing, you will be logged out
-            automatically.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            aria-label="Renew your session"
-            variant="contained"
-            color="primary"
-            onClick={handleRenew}
-          >
-            Renew Session
-          </Button>
-          <Button
-            aria-label="Logout and end your session"
-            onClick={handleLogout}
-          >
-            Logout
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <>
+        {mutationRenew.isError && <UseMutationAlert {...mutationRenew} />}
+        <Dialog
+          open={isAuthenticated && openDialog}
+          maxWidth="xs"
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <WarningAmberIcon color="warning" />
+              <Typography variant="h6" component="span">
+                Session Expiration Warning
+              </Typography>
+            </Stack>
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              Your session will expire in:
+            </DialogContentText>
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              marginY={2} // Adds vertical margin for spacing
+            >
+              <CountdownProgress timeRemaining={timeRemaining} />
+            </Box>
+            <DialogContentText id="alert-dialog-description">
+              To continue your session, click the <strong>Renew Session</strong>{" "}
+              button below. If you do nothing, you will be logged out
+              automatically.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              aria-label="Renew your session"
+              variant="contained"
+              color="primary"
+              onClick={handleRenew}
+            >
+              Renew Session
+            </Button>
+            <Button
+              aria-label="Logout and end your session"
+              onClick={handleLogout}
+            >
+              Logout
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </>
     );
   }
 );

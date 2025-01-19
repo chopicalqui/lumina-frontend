@@ -49,7 +49,10 @@ const AccessTokens = React.memo(() => {
   );
   // We obtain the context to open the details dialog for adding new or editing/viewing existing access tokens.
   const { onOpen, ...detailsDialogContext } = useDetailsDialog(
-    React.useMemo(() => ({ name: "Access Token" }), [])
+    React.useMemo(
+      () => ({ name: "Access Token", displayAddAndCloseButton: false }),
+      []
+    )
   );
   // We obtain the Tanstack mutation to allow deleting access tokens.
   const {

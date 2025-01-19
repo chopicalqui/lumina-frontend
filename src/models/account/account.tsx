@@ -39,8 +39,13 @@ import {
   useQuery,
 } from "../../utils/hooks/tanstack/useQuery";
 import { NamedModelBase, verifyEmail } from "../common";
-import { queryKeyAccounts, URL_ACCOUNTS, URL_ACCOUNTS_ME } from "./common";
-import { axiosDelete, axiosGet, queryKeyAccountMe } from "../../utils/axios";
+import {
+  queryKeyAccountMe,
+  queryKeyAccounts,
+  URL_ACCOUNTS,
+  URL_ACCOUNTS_ME,
+} from "./common";
+import { axiosDelete, axiosGet } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
 import { queryClient } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
@@ -191,13 +196,20 @@ export const META_INFO: MetaInfoType[] = [
         /**
          * This optional function is used to validate the input of the Active Until field.
          */
-        getError: ({ value, state, label }: GetErrorOptions) => {
-          const activeFrom = value as dayjs.Dayjs | undefined;
+        getError: ({ state, label }: GetErrorOptions) => {
+          const activeFrom = state.values.activeFrom as dayjs.Dayjs | undefined;
           const activeUntil = state.values.activeUntil as
             | dayjs.Dayjs
-            | undefined;
-          if (activeFrom && activeUntil && activeUntil.isBefore(activeFrom)) {
-            return `The ${label} must be before the Active Until date.`;
+            | undefined
+            | null;
+          if (
+            activeFrom &&
+            activeUntil &&
+            (activeUntil.isBefore(activeFrom) || activeUntil.isSame(activeFrom))
+          ) {
+            throw new Error(
+              `The ${label} must be before the Active Until date.`
+            );
           }
         },
       },
@@ -220,11 +232,18 @@ export const META_INFO: MetaInfoType[] = [
         /**
          * This optional function is used to validate the input of the Active Until field.
          */
-        getError: ({ value, state, label }: GetErrorOptions) => {
+        getError: ({ state, label }: GetErrorOptions) => {
           const activeFrom = state.values.activeFrom as dayjs.Dayjs | undefined;
-          const activeUntil = value as dayjs.Dayjs | undefined;
-          if (activeFrom && activeUntil && activeUntil.isBefore(activeFrom)) {
-            return `The ${label} must be after the Active From date.`;
+          const activeUntil = state.values.activeUntil as
+            | dayjs.Dayjs
+            | undefined
+            | null;
+          if (
+            activeFrom &&
+            activeUntil &&
+            (activeUntil.isBefore(activeFrom) || activeUntil.isSame(activeFrom))
+          ) {
+            throw new Error(`The ${label} must be after the Active From date.`);
           }
         },
       },

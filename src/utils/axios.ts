@@ -23,12 +23,7 @@ import { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 import { axiosClient } from "./consts";
 import { StatusMessage } from "../models/common";
 import { getCookieValue } from "./globals";
-import { CSRF_TOKEN_HEADER, queryClient } from "./consts";
-
-/**
- * The query key for the account me query.
- */
-export const queryKeyAccountMe = ["me"];
+import { CSRF_TOKEN_HEADER } from "./consts";
 
 /**
  * This function is used to issue a GET request to the server.
@@ -149,23 +144,14 @@ export const axiosDelete = async <T>(
 };
 
 /**
- * Renews the current session by sending a request to the server.
- */
-export const renewSession = () => {
-  axiosPost("/renew")
-    .then(() => queryClient.invalidateQueries({ queryKey: queryKeyAccountMe }))
-    .catch((reason: AxiosError<StatusMessage>) => {
-      if (reason.response?.status === 401) {
-        window.location.href = "/";
-      }
-    });
-};
-
-/**
  * Invalidates the current session by sending a request to the server.
  */
 export const logoutSession = () => {
   axiosPost("/logout")
-    .then(() => (window.location.href = "/"))
-    .catch(() => (window.location.href = "/"));
+    .then(() => {
+      window.location.href = "/";
+    })
+    .catch(() => {
+      window.location.href = "/";
+    });
 };

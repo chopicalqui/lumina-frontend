@@ -332,6 +332,8 @@ export const handleOnChangeBlur = (
   const field = onChangeOptions?.field || onBlurOptions?.field;
   const fieldValue = field ? state.values[field] : undefined;
   const fieldColumn = field ? state.columns[field] : undefined;
+  let hasError = false;
+  let result: ControlFactoryReducerState;
   if (!field) {
     throw new Error("Field must not be undefined.");
   }
@@ -346,7 +348,7 @@ export const handleOnChangeBlur = (
   // TODO: Update this if statement to include new MUI control
   if (fieldColumn?.type === "switch") {
     // Update state
-    return {
+    result = {
       ...state,
       values: { ...state.values, [field]: newValue },
     };
@@ -361,6 +363,7 @@ export const handleOnChangeBlur = (
         // Perform the custom validation
         fieldColumn?.getError?.(errorOptions);
       } catch (e: unknown) {
+        hasError = true;
         error = (e as Error).message;
       }
     }
@@ -370,7 +373,7 @@ export const handleOnChangeBlur = (
       edited: fieldValue !== newValue,
     };
     // Update state
-    return {
+    result = {
       ...state,
       states: { ...state.states, [field]: fieldState },
       values: { ...state.values, [field]: newValue },
@@ -388,6 +391,7 @@ export const handleOnChangeBlur = (
       // Perform the custom validation
       fieldColumn?.getError?.(errorOptions);
     } catch (e: unknown) {
+      hasError = true;
       error = (e as Error).message;
     }
     // Update error flag and message
@@ -396,7 +400,7 @@ export const handleOnChangeBlur = (
       edited: fieldValue !== newValue,
     };
     // Update state
-    return {
+    result = {
       ...state,
       states: { ...state.states, [field]: fieldState },
       values: {
@@ -405,36 +409,71 @@ export const handleOnChangeBlur = (
       },
     };
   } else if (fieldColumn?.type === "datepicker") {
-    // Perform input validation
-    let error: string | undefined = undefined;
     // Only validate when the focus is lost
     if (action === "ON_BLUR") {
+      // Perform input validation
+      let error: string | undefined = undefined;
       try {
         // Perform the default validation
         verifyDatePickerDefault(errorOptions);
         // Perform the custom validation
         fieldColumn?.getError?.(errorOptions);
       } catch (e: unknown) {
+        hasError = true;
         error = (e as Error).message;
       }
+      // Update error flag and message
+      const fieldState: StateFlagProps = {
+        errorText: error,
+        edited: fieldValue !== newValue,
+      };
+      // Update state
+      result = {
+        ...state,
+        states: { ...state.states, [field]: fieldState },
+        values: {
+          ...state.values,
+        },
+      };
+    } else {
+      // Update state only in onChange cases
+      const fieldState: StateFlagProps = {
+        edited: fieldValue !== newValue,
+      };
+      // Update state
+      result = {
+        ...state,
+        states: { ...state.states, [field]: fieldState },
+        values: {
+          ...state.values,
+          [field]: newValue || null,
+        },
+      };
     }
-    // Update error flag and message
-    const fieldState: StateFlagProps = {
-      errorText: error,
-      edited: fieldValue !== newValue,
-    };
-    // Update state
-    return {
-      ...state,
-      states: { ...state.states, [field]: fieldState },
-      values: {
-        ...state.values,
-        [field]: newValue || null,
-      },
-    };
   } else {
     throw new Error(`Invalid control type: ${fieldColumn?.type}`);
   }
+  // An update in the current field can cause an error in other fields (e.g., a date must before another date).
+  // Hence, we need to check the entire state.
+  Object.keys(result.columns)
+    .filter((key) => key !== field)
+    .forEach((key) => {
+      try {
+        const errorOptions = {
+          field: key,
+          label: result.columns[key]?.label,
+          value: result.values[key],
+          state: result,
+          required: result.columns[key]?.options.required,
+        };
+        result.columns[key].getError?.(errorOptions);
+        result.states[key].errorText = undefined;
+      } catch (e: unknown) {
+        hasError = hasError || true;
+        result.states[key].errorText = (e as Error).message;
+      }
+    });
+  return result;
 };
 
 /**

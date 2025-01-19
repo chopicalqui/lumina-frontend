@@ -56,10 +56,10 @@ export const ADAPTER_LOCALE = "en-gb";
 // configured in the backend (see environment variable OAUTH2_ACCESS_TOKEN_EXPIRE_MINUTES).
 export const SESSION_TIMEOUT = 840;
 // Amount of seconds before the session expires that a warning is shown.
-export const SESSION_TIMEOUT_WARNING = 5 * 60;
+export const SESSION_TIMEOUT_WARNING = 4 * 60;
 // The session expiration warning is shown SESSION_TIMEOUT - SESSION_TIMEOUT_WARNING - SESSION_TIMEOUT_BUFFER
 // seconds of inactivity.
-export const SESSION_TIMEOUT_BUFFER = 10;
+export const SESSION_TIMEOUT_BUFFER = 20;
 
 if (SESSION_TIMEOUT < SESSION_TIMEOUT_WARNING) {
   throw new Error(

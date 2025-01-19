@@ -35,6 +35,8 @@ import AlertSnackbar from "../AlertSnackbar";
 export interface DetailsDialogOptions extends DialogOptions {
   // The mode of the dialog.
   mode?: DetailsDialogMode;
+  // If true, the dialog will display an "Add & Close" button.
+  displayAddAndCloseButton?: boolean;
   // The form context holding all user input information.
   controlContext: UseControlFactoryResult;
   // Instructs the dialog to display a loading spinner.
@@ -50,7 +52,15 @@ export const Item = styled("div")(({ theme }) => ({
  * This component is the default dialog that is used to display details about a DataGrid entry.
  */
 const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
-  const { mode, name, onClose, isLoading, controlContext, ...context } = props;
+  const {
+    mode,
+    name,
+    onClose,
+    isLoading,
+    controlContext,
+    displayAddAndCloseButton,
+    ...context
+  } = props;
   const { onSubmit: submitData } = controlContext;
   // Dialog to confirm that user wants to cancel the dialog.
   const { showDialog, ...confirmDialogOptions } = useConfirmDialog();
@@ -101,15 +111,17 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
 
   // Buttons to display in the dialog.
   const buttons = React.useMemo(() => {
-    switch (mode) {
-      case DetailsDialogMode.View:
-        return [
-          <Button key="close" onClick={onClose}>
-            Close
-          </Button>,
-        ];
-      case DetailsDialogMode.Edit:
-        return [
+    const result: JSX.Element[] = [];
+    if (mode === DetailsDialogMode.View) {
+      result.push(
+        <Button key="close" onClick={onClose}>
+          Close
+        </Button>
+      );
+    }
+    if (mode === DetailsDialogMode.Edit) {
+      result.push(
+        ...[
           <Button key="save" onClick={onSubmit}>
             Save
           </Button>,
@@ -119,21 +131,37 @@ const DetailsDialog = React.memo((props: DetailsDialogOptions) => {
           <Button key="cancel" onClick={onCancel}>
             Cancel
           </Button>,
-        ];
-      case DetailsDialogMode.Add:
-        return [
-          <Button key="add" onClick={onSubmit}>
-            Add
-          </Button>,
+        ]
+      );
+    }
+    if (mode === DetailsDialogMode.Add) {
+      result.push(
+        <Button key="add" onClick={onSubmit}>
+          Add
+        </Button>
+      );
+      if (displayAddAndCloseButton) {
+        result.push(
           <Button key="add-close" onClick={onSubmitAndClose}>
             Add & Close
-          </Button>,
-          <Button key="cancel" onClick={onCancel}>
-            Cancel
-          </Button>,
-        ];
+          </Button>
+        );
+      }
+      result.push(
+        <Button key="cancel" onClick={onCancel}>
+          Cancel
+        </Button>
+      );
     }
-  }, [mode, onClose, onCancel, onSubmit, onSubmitAndClose]);
+    return result;
+  }, [
+    mode,
+    onClose,
+    onCancel,
+    onSubmit,
+    onSubmitAndClose,
+    displayAddAndCloseButton,
+  ]);
 
   // Toolbar items to display a loading spinner.
   const toolbarItems = React.useMemo(() => {

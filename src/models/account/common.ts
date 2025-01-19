@@ -19,9 +19,8 @@
  * @license GPLv3
  */
 
-import { queryKeyAccountMe } from "../../utils/axios";
-
 // Query keys for accounts
+export const queryKeyAccountMe = ["me"];
 export const queryKeyAccounts = ["accounts"];
 export const queryKeyAccountMeNotifications = [
   ...queryKeyAccountMe,
@@ -36,6 +35,8 @@ export const queryKeyAccessTokens = [...queryKeyAccountMe, "accessTokens"];
 export const queryKeyAccountMeDataGrid = [...queryKeyAccountMe];
 
 // REST API endpoints for accounts
+export const URL_RENEW = "/renew";
+export const URL_LOGOUT = "/logout";
 export const URL_PATH_ACCOUNTS_PREFIX = "/v1/accounts";
 export const URL_ACCOUNTS = URL_PATH_ACCOUNTS_PREFIX;
 export const URL_ACCOUNTS_ME = URL_PATH_ACCOUNTS_PREFIX + "/me";
