@@ -31,12 +31,14 @@ export const queryKeyAccountMeSettings = [
   "accountSettings",
 ];
 export const queryKeyScopes = [...queryKeyAccountMe, "scopes"];
-export const queryKeyAccessTokens = [...queryKeyAccountMe, "accessTokens"];
-export const queryKeyAccountMeDataGrid = [...queryKeyAccountMe];
+export const queryKeyAccessTokens = [...queryKeyAccountMe, "access-tokens"];
+export const queryKeyAccountMeDataGrid = [...queryKeyAccountMe, "data-grids"];
 
 // REST API endpoints for accounts
 export const URL_RENEW = "/renew";
 export const URL_LOGOUT = "/logout";
+export const URL_FILTER_MENU_SUFFIX = "/filter-menu";
+export const URL_FILTER_SELECTED_SUFFIX = "/selected";
 export const URL_PATH_ACCOUNTS_PREFIX = "/v1/accounts";
 export const URL_ACCOUNTS = URL_PATH_ACCOUNTS_PREFIX;
 export const URL_ACCOUNTS_ME = URL_PATH_ACCOUNTS_PREFIX + "/me";
@@ -49,8 +51,9 @@ export const URL_USERS_ME_TABLE_DENSITY =
   URL_ACCOUNTS_ME_SETTINGS + "/table-density";
 export const URL_ACCOUNTS_ME_AVATAR = URL_ACCOUNTS_ME_SETTINGS + "/avatar";
 export const URL_ACCOUNTS_ME_AVATAR_RESET = URL_ACCOUNTS_ME_AVATAR + "/reset";
-export const URL_DATAGRID_SETTINGS =
-  URL_ACCOUNTS_ME_SETTINGS + "/data-grid/{id}";
+// DataGrid
+const URL_DATAGRID = URL_ACCOUNTS_ME_SETTINGS + "/data-grid";
+export const URL_DATAGRID_SETTINGS = URL_DATAGRID + "/{id}";
 export const URL_DATAGRID_SETTINGS_RESET = URL_DATAGRID_SETTINGS + "/reset";
 // Notifications
 export const URL_ME_NOTIFICATIONS = URL_ACCOUNTS_ME + "/notifications";

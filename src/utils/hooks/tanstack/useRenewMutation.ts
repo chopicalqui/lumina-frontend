@@ -22,7 +22,7 @@ import React from "react";
 import { useMutation } from "./useMutation";
 import { axiosPost } from "../../axios";
 import { queryKeyAccountMe, URL_RENEW } from "../../../models/account/common";
-import { queryClient } from "../../consts";
+import { invalidateQueryKeys } from "../../consts";
 
 /**
  * Hook that allows renewing the session.
@@ -32,8 +32,7 @@ export const useRenewMutation = () =>
     React.useMemo(
       () => ({
         mutationFn: async (data: any) => axiosPost(URL_RENEW, data),
-        onSuccess: () =>
-          queryClient.invalidateQueries({ queryKey: queryKeyAccountMe }),
+        onSuccess: () => invalidateQueryKeys(queryKeyAccountMe),
       }),
       []
     )

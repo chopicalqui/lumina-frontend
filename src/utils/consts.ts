@@ -20,7 +20,7 @@
  */
 
 import Axios from "axios";
-import { QueryClient, QueryCache } from "@tanstack/react-query";
+import { QueryClient, QueryCache, QueryKey } from "@tanstack/react-query";
 
 export enum MuiLicenseType {
   Community = 10,
@@ -80,3 +80,17 @@ export const queryClient = new QueryClient({
     onError: (err, query) => console.log(err, query),
   }),
 });
+
+/*
+ * Method that allows invalidating query keys.
+ */
+export const invalidateQueryKeys = (
+  ...queryKeys: (QueryKey | undefined | null)[]
+) => {
+  queryKeys
+    .filter(
+      (queryKey): queryKey is QueryKey =>
+        queryKey !== undefined && queryKey !== null
+    ) // Type guard
+    .forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
+};

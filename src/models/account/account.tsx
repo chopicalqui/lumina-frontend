@@ -47,7 +47,7 @@ import {
 } from "./common";
 import { axiosDelete, axiosGet } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
-import { queryClient } from "../../utils/consts";
+import { invalidateQueryKeys } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 import dayjs from "dayjs";
 import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
@@ -153,6 +153,7 @@ export const META_INFO: MetaInfoType[] = [
       autocomplete: {
         field: "roles",
         label: "Roles",
+        disabled: true,
         multiple: true,
         options: getAutocompleteOptions(AccountRole),
         helperText: "The user's role memberships.",
@@ -344,6 +345,7 @@ export const useQueryMe = () =>
   useQuery(
     React.useMemo(
       () => ({
+        url: URL_ACCOUNTS_ME,
         queryKey: queryKeyAccountMe,
         disableAutoRefresh: true,
         queryFn: async () => axiosGet<Account>(URL_ACCOUNTS_ME),
@@ -385,9 +387,8 @@ export const useDeleteAccount = () =>
   useDeleteMutation(
     React.useMemo(
       () => ({
-        mutationFn: async (data: any) => axiosDelete(`${URL_ACCOUNTS}/${data}`),
-        onSuccess: async () =>
-          await queryClient.invalidateQueries({ queryKey: queryKeyAccounts }),
+        mutationFn: async (id: string) => axiosDelete(URL_ACCOUNTS, { id }),
+        onSuccess: () => invalidateQueryKeys(queryKeyAccounts),
       }),
       []
     )

@@ -25,19 +25,18 @@ import {
   useDeleteAccessTokens,
   useQueryAccessTokens,
 } from "../models/account/access_token";
-import { useQueryMe } from "../models/account/account";
-import { useDefaultDataGridRowActions } from "../utils/hooks/mui/useDefaultDataGridRowActions";
-import { useDataGrid } from "../utils/hooks/mui/useDataGrid";
+import { useDefaultDataGridRowActions } from "../utils/hooks/mui/datagrid/useDefaultDataGridRowActions";
+import { useDataGrid } from "../utils/hooks/mui/datagrid/useDataGrid";
 import DataGrid from "../components/data/DataGrid";
 import AccessTokenDetailsDialog from "./dialogs/account/AccessTokenDetailsDialog";
 import { useDetailsDialog } from "../utils/hooks/mui/useDetailsDialog";
 import ConfirmationDialog, {
   ConfirmationDialogOptions,
 } from "../components/feedback/dialogs/ConfirmDialog";
+import { useDataGridScopeInfo } from "../utils/hooks/mui/datagrid/useDataGridScopeInfo";
+import { useDataGridFilterManager } from "../utils/hooks/mui/datagrid/useDataGridFilterManager";
 
 const AccessTokens = React.memo(() => {
-  // We obtain the current user's data.
-  const me = useQueryMe();
   // We query all access tokens for the DataGrid.
   const queryContext = useQueryAccessTokens(
     React.useMemo(
@@ -47,6 +46,10 @@ const AccessTokens = React.memo(() => {
       []
     )
   );
+  // Gather general information required by DataGrid hooks.
+  const scopeInfo = useDataGridScopeInfo(queryContext);
+  // Allow the user to manage DataGrid filters.
+  const filterManager = useDataGridFilterManager(scopeInfo);
   // We obtain the context to open the details dialog for adding new or editing/viewing existing access tokens.
   const { onOpen, ...detailsDialogContext } = useDetailsDialog(
     React.useMemo(
@@ -64,8 +67,7 @@ const AccessTokens = React.memo(() => {
   const rowActions = useDefaultDataGridRowActions(
     React.useMemo(
       () => ({
-        me: me!.data!,
-        queryContext,
+        scopeInfo,
         delete: {
           onClick: (params) => showConfirmDeleteDialog(params.id),
         },
@@ -88,23 +90,25 @@ const AccessTokens = React.memo(() => {
           },
         },
       }),
-      [onOpen, showConfirmDeleteDialog, me, queryContext]
+      [scopeInfo, onOpen, showConfirmDeleteDialog]
     )
   );
   // We obtain the DataGrid configuration.
-  const dataGrid = useDataGrid({
-    me: me!.data!,
-    queryContext,
-    rowActions,
-    onCreateButtonClick: React.useCallback(
-      () =>
-        onOpen({
-          mode: DetailsDialogMode.Add,
-          open: true,
-        }),
-      [onOpen]
-    ),
-  });
+  const dataGrid = useDataGrid(
+    React.useMemo(
+      () => ({
+        scopeInfo,
+        rowActions,
+        filterManager,
+        onCreateButtonClick: () =>
+          onOpen({
+            mode: DetailsDialogMode.Add,
+            open: true,
+          }),
+      }),
+      [scopeInfo, rowActions, filterManager, onOpen]
+    )
+  );
 
   return (
     <>

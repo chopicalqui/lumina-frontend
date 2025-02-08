@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MyAwesomeProject. If not, see <https://www.gnu.org/licenses/>.
+ * along with Lumina. If not, see <https://www.gnu.org/licenses/>.
  *
  * @author Lukas Reiter
  * @copyright Copyright (C) 2024 Lukas Reiter
@@ -20,123 +20,101 @@
  */
 
 import React from "react";
+import { UseQueryResult } from "../../tanstack/useQuery";
 import {
-  UseQueryResult,
-  UseQueryForDataGridResult,
-  useQuery,
-} from "../tanstack/useQuery";
-import {
-  DataGridPremium,
-  DataGridPremiumProps,
   GridActionsColDef,
   GridColDef,
   GridColumnVisibilityModel,
-  useGridApiRef,
-  GridInitialState,
 } from "@mui/x-data-grid-premium";
-import { Account } from "../../../models/account/account";
 import {
   DefaultDataGridToolbarOptions,
   useDefaultDataGridToolbar,
 } from "./useDefaultDataGridToolbar";
-import { useMutation } from "../tanstack/useMutation";
+import { useMutation } from "../../tanstack/useMutation";
+import { UseMutationResult } from "../../tanstack/useMutation";
+import { invalidateQueryKeys } from "../../../consts";
+import { axiosPut } from "../../../axios";
+import { useConfirmDialog, UseConfirmDialogOptions } from "../useConfirmDialog";
 import {
-  queryKeyAccountMeDataGrid,
-  URL_DATAGRID_SETTINGS,
-} from "../../../models/account/common";
-import { QueryKey } from "@tanstack/react-query";
-import { UseMutationResult } from "../tanstack/useMutation";
-import { queryClient } from "../../consts";
-import { axiosGet, axiosPut } from "../../axios";
-import { useConfirmDialog, UseConfirmDialogOptions } from "./useConfirmDialog";
-
-// Abstraction type allowing to switch between different data grid implementations.
-export type DataGridOptions = DataGridPremiumProps;
-export const MuiDataGrid = DataGridPremium;
+  DataGridRead,
+  DataGridFilterLookup,
+} from "../../../../models/account/datagrid";
+import { UseDataGridFilterManagerResults } from "./useDataGridFilterManager";
+import {
+  DataGridOptions,
+  UseDataGridScopeResult,
+} from "./useDataGridScopeInfo";
 
 /**
  * This interface defines the properties of the useDataGrid hook.
  */
 export interface UseDataGridOptions<T> extends DefaultDataGridToolbarOptions {
-  // The account of the current user.
-  me: Account;
-  // The properties of the useQuery hook.
-  queryContext: UseQueryForDataGridResult<T>;
   // The properties of the DataGrid component.
   dataGrid?: DataGridOptions;
   // Actions that are attached to each DataGrid row.
   rowActions?: GridActionsColDef;
+  // General information about the DataGrid.
+  scopeInfo: UseDataGridScopeResult<T>;
+  // Optional filter manager that allows users to manage their filters.
+  filterManager?: UseDataGridFilterManagerResults;
 }
 
 export interface UseDataGridResult<T> extends DataGridOptions {
   queryContext: UseQueryResult<T>;
-  querySettings: UseQueryResult<GridInitialState>;
-  mutateConfig: UseMutationResult;
+  selectedFilter?: DataGridFilterLookup;
+  querySettings: UseQueryResult<DataGridRead>;
   mutateResetConfig: UseMutationResult;
   confirmResetDialogOptions: UseConfirmDialogOptions;
+  scopeInfo: UseDataGridScopeResult<T>;
 }
 
 /**
  * This custom hook can be used to issue a GET request to the server and to obtain the configuration for a MUI DataGrid.
  */
 export const useDataGrid = <T>({
-  me,
-  queryContext,
+  scopeInfo,
   dataGrid,
   rowActions,
   createButtonName,
   onCreateButtonClick,
   elements,
+  filterManager,
 }: UseDataGridOptions<T>): UseDataGridResult<T> => {
-  const apiRef = useGridApiRef();
-  const scope = queryContext.scope;
-  const settingsUrl = React.useMemo(
-    () => (scope && me ? URL_DATAGRID_SETTINGS.replace("{id}", scope) : ""),
-    [scope, me]
-  );
-  const settingsResetUrl = React.useMemo(
-    () => (settingsUrl ? settingsUrl + "/reset" : ""),
-    [settingsUrl]
-  );
-  const settingsQueryKey: QueryKey = React.useMemo(
-    () =>
-      scope && me ? [...queryKeyAccountMeDataGrid, { dataGridId: scope }] : [],
-    [scope, me]
-  );
+  const {
+    apiRef,
+    settingsUrl,
+    queryContext,
+    querySettings,
+    settingsResetUrl,
+    settingsQueryKey,
+  } = scopeInfo;
+  const onFilterUpdate = filterManager?.onFilterUpdate;
+  const selectedFilterQueryKey = filterManager?.selectedFilterQueryKey;
 
-  // Obtain DataGrid configuration for DataGrid.
-  const querySettings = useQuery<GridInitialState>(
-    React.useMemo(
-      () => ({
-        queryKey: settingsQueryKey,
-        queryFn: async () => axiosGet<GridInitialState>(settingsUrl),
-        enabled: settingsQueryKey.length > 0 && settingsUrl.length > 0,
-      }),
-      [settingsQueryKey, settingsUrl]
-    )
-  );
-
-  // Update DataGrid configuration for DataGrid.
+  /**
+   * Update DataGrid configuration for DataGrid.
+   */
   const mutateConfig = useMutation(
     React.useMemo(
       () => ({
         mutationFn: async (data: any) => axiosPut(settingsUrl, data),
-        onSuccess: () =>
-          queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
+        onSuccess: () => invalidateQueryKeys(settingsQueryKey),
       }),
       [settingsUrl, settingsQueryKey]
     )
   );
 
-  // Reset DataGrid configuration for DataGrid.
+  /**
+   * Reset DataGrid configuration for DataGrid.
+   */
   const mutateResetConfig = useMutation(
     React.useMemo(
       () => ({
         mutationFn: async () => axiosPut(settingsResetUrl),
         onSuccess: () =>
-          queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
+          invalidateQueryKeys(settingsQueryKey, selectedFilterQueryKey),
       }),
-      [settingsQueryKey, settingsResetUrl]
+      [settingsResetUrl, settingsQueryKey, selectedFilterQueryKey]
     )
   );
 
@@ -158,20 +136,22 @@ export const useDataGrid = <T>({
   const dataGridToolbar = useDefaultDataGridToolbar(
     React.useMemo(
       () => ({
-        queryContext,
-        me: me,
+        apiRef,
+        elements,
+        scopeInfo,
+        filterManager,
         onResetSettings,
         createButtonName,
         onCreateButtonClick,
-        elements,
       }),
       [
-        queryContext,
-        me,
+        apiRef,
+        elements,
+        scopeInfo,
+        filterManager,
         onResetSettings,
         createButtonName,
         onCreateButtonClick,
-        elements,
       ]
     )
   );
@@ -209,8 +189,8 @@ export const useDataGrid = <T>({
   // We ensure that per default, the initially hidden columns are part of the initialState object.
   const initialState = React.useMemo(
     () =>
-      Object.keys(querySettings?.data ?? {}).length > 0
-        ? querySettings?.data
+      Object.keys(querySettings?.data?.settings ?? {}).length > 0
+        ? querySettings?.data?.settings
         : {
             columns: {
               columnVisibilityModel,
@@ -233,8 +213,8 @@ export const useDataGrid = <T>({
     return result;
   }, [rowActions, queryContext.metaInfo]);
 
-  return React.useMemo(() => {
-    return {
+  return React.useMemo(
+    () => ({
       ...dataGrid,
       apiRef,
       rows: data,
@@ -245,26 +225,33 @@ export const useDataGrid = <T>({
       mutateConfig,
       mutateResetConfig,
       slots,
+      selectedFilter: querySettings?.data?.selectedFilter,
       // Events to update updates on the DataGrid configuration in the backend.
       onColumnVisibilityModelChange: onConfigUpdate,
       onColumnWidthChange: onConfigUpdate,
-      onFilterModelChange: onConfigUpdate,
+      onFilterModelChange: onFilterUpdate ?? onConfigUpdate,
       onSortModelChange: onConfigUpdate,
       onColumnOrderChange: onConfigUpdate,
       confirmResetDialogOptions,
-    };
-  }, [
-    dataGrid,
-    apiRef,
-    data,
-    columns,
-    initialState,
-    querySettings,
-    queryContext,
-    mutateConfig,
-    mutateResetConfig,
-    slots,
-    onConfigUpdate,
-    confirmResetDialogOptions,
-  ]);
+      filterManager,
+      scopeInfo,
+    }),
+    [
+      dataGrid,
+      apiRef,
+      data,
+      columns,
+      initialState,
+      querySettings,
+      queryContext,
+      mutateConfig,
+      mutateResetConfig,
+      slots,
+      onConfigUpdate,
+      onFilterUpdate,
+      confirmResetDialogOptions,
+      filterManager,
+      scopeInfo,
+    ]
+  );
 };

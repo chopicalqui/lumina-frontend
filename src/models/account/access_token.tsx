@@ -38,7 +38,7 @@ import {
 } from "./common";
 import { axiosDelete } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
-import { queryClient } from "../../utils/consts";
+import { invalidateQueryKeys } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 import dayjs from "dayjs";
 import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
@@ -235,10 +235,9 @@ export const useDeleteAccessTokens = () =>
   useDeleteMutation(
     React.useMemo(
       () => ({
-        mutationFn: async (data: any) =>
-          axiosDelete(`${URL_ME_ACCESS_TOKENS}/${data}`),
-        onSuccess: () =>
-          queryClient.invalidateQueries({ queryKey: queryKeyAccessTokens }),
+        mutationFn: async (id: string) =>
+          axiosDelete(URL_ME_ACCESS_TOKENS, { id }),
+        onSuccess: () => invalidateQueryKeys(queryKeyAccessTokens),
       }),
       []
     )

@@ -22,14 +22,12 @@
 import React from "react";
 import { Alert } from "@mui/material";
 import LoadingBar from "./LoadingBar";
-import {
-  UseDataGridResult,
-  MuiDataGrid,
-} from "../../utils/hooks/mui/useDataGrid";
+import { UseDataGridResult } from "../../utils/hooks/mui/datagrid/useDataGrid";
 import ConfirmationDialog, {
   ConfirmationDialogOptions,
 } from "../feedback/dialogs/ConfirmDialog";
 import LoadingIndicator from "../feedback/LoadingIndicator";
+import { MuiDataGrid } from "../../utils/hooks/mui/datagrid/useDataGridScopeInfo";
 
 const DataGrid = React.memo(<T,>(props: UseDataGridResult<T>) => {
   const {

@@ -128,15 +128,19 @@ export const axiosPut = async <TData, TVariables>(
  */
 export const axiosDelete = async <T>(
   url: string,
-  config?: AxiosRequestConfig<any> | undefined
+  config: (AxiosRequestConfig<any> | undefined) & { id: string }
 ): Promise<T> => {
   const headers = { ...(config?.headers ?? {}) };
   const token = getCookieValue(CSRF_TOKEN_HEADER);
   if (token) {
     headers[CSRF_TOKEN_HEADER] = token;
   }
+  const { id, ...configProps } = config;
   return axiosClient
-    .delete<T, AxiosResponse<T, StatusMessage>>(url, { ...config, headers })
+    .delete<T, AxiosResponse<T, StatusMessage>>(`${url}/${id}`, {
+      ...configProps,
+      headers,
+    })
     .catch((error) => {
       throw error as AxiosError<StatusMessage>;
     })

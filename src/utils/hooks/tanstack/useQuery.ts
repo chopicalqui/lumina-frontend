@@ -42,6 +42,8 @@ export interface ChildQueryOptions {
 }
 
 export interface UseQueryType<T> extends UseQueryOptions<T>, ChildQueryOptions {
+  // The URL used by the queryFn function.
+  url: string;
   // Object containing the query parameters.
   params?: T;
   // If false, it disables this query from automatically running.
@@ -68,31 +70,33 @@ export type UseQueryForDataGridResult<T> = UseQueryResult<T> &
   IUseQueryMetaInfo;
 
 // This custom hook can be used to issue a GET request to the server.
-export const useQuery = <T>(
-  props: UseQueryDataGridType<T>
-): UseQueryForDataGridResult<T> => {
+export const useQuery = <T>({
+  url,
+  scope,
+  staleTime,
+  gcTime,
+  refetchInterval,
+  refetchOnWindowFocus,
+  refetchOnMount,
+  refetchOnReconnect,
+  metaInfo,
+  queryKey,
+  disableAutoRefresh,
+  ...options
+}: UseQueryDataGridType<T>): UseQueryForDataGridResult<T> => {
   let statusMessage: StatusMessage | undefined = undefined;
-  const {
-    scope,
-    staleTime,
-    gcTime,
-    refetchInterval,
-    refetchOnWindowFocus,
-    refetchOnMount,
-    refetchOnReconnect,
-    metaInfo,
-    queryKey,
-    disableAutoRefresh,
-    ...options
-  } = props;
   const refreshOptions = React.useMemo(
     () => ({
-      staleTime: disableAutoRefresh ? Infinity : staleTime,
+      staleTime: disableAutoRefresh ? Infinity : (staleTime ?? 0),
       gcTime: disableAutoRefresh ? Infinity : gcTime,
       refetchInterval: disableAutoRefresh ? false : refetchInterval,
-      refetchOnWindowFocus: disableAutoRefresh ? false : refetchOnWindowFocus,
-      refetchOnMount: disableAutoRefresh ? "always" : refetchOnMount,
-      refetchOnReconnect: disableAutoRefresh ? false : refetchOnReconnect,
+      refetchOnWindowFocus: disableAutoRefresh
+        ? false
+        : (refetchOnWindowFocus ?? true),
+      refetchOnMount: disableAutoRefresh ? "always" : (refetchOnMount ?? true),
+      refetchOnReconnect: disableAutoRefresh
+        ? false
+        : (refetchOnReconnect ?? true),
     }),
     [
       disableAutoRefresh,
@@ -130,13 +134,15 @@ export const useQuery = <T>(
     [query.isError, query.isSuccess, query.data, query.error]
   );
 
-  return React.useMemo(() => {
-    return {
+  return React.useMemo(
+    () => ({
       ...query,
+      url,
       scope,
       queryKey: queryKey,
       statusMessage,
       metaInfo: metaInfo ?? [],
-    };
-  }, [query, scope, metaInfo, statusMessage, queryKey]);
+    }),
+    [url, query, scope, metaInfo, statusMessage, queryKey]
+  );
 };
