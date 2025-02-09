@@ -92,8 +92,8 @@ export const useQuery = <T>({
       refetchInterval: disableAutoRefresh ? false : refetchInterval,
       refetchOnWindowFocus: disableAutoRefresh
         ? false
-        : (refetchOnWindowFocus ?? true),
-      refetchOnMount: disableAutoRefresh ? "always" : (refetchOnMount ?? true),
+        : (refetchOnWindowFocus ?? "always"),
+      refetchOnMount: disableAutoRefresh ? false : (refetchOnMount ?? "always"),
       refetchOnReconnect: disableAutoRefresh
         ? false
         : (refetchOnReconnect ?? true),
@@ -109,6 +109,8 @@ export const useQuery = <T>({
     ]
   );
 
+  console.log("useQuery", url, disableAutoRefresh, refreshOptions);
+
   const query = useQueryTanstack({
     ...options,
     ...refreshOptions,
@@ -116,7 +118,10 @@ export const useQuery = <T>({
     enabled: options.enabled ?? true,
     retry: React.useCallback((failureCount: number, error: Error) => {
       // Abort retries if the error status code is 401
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
+      if (
+        axios.isAxiosError(error) &&
+        [401, 500].includes(error.response?.status ?? 0)
+      ) {
         return false; // Do not retry
       }
       return failureCount < 3; // Retry up to 3 times for other errors

@@ -413,6 +413,8 @@ export const handleOnChangeBlur = (
     if (action === "ON_BLUR") {
       // Perform input validation
       let error: string | undefined = undefined;
+      // The onBlur event by itself does not provide the new value. Hence, we need to consider the current value as well.
+      errorOptions.value = fieldValue ?? newValue;
       try {
         // Perform the default validation
         verifyDatePickerDefault(errorOptions);
