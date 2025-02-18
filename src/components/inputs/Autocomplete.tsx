@@ -128,7 +128,7 @@ export type AutocompleteOnBlurType = (
 /**
  * The render option function .
  */
-type RenderOptionFunctionType = (
+export type RenderOptionFunctionType = (
   props: React.HTMLAttributes<HTMLLIElement> & { key: any },
   option: AutoCompleteClass,
   state: AutocompleteRenderOptionState
@@ -208,14 +208,14 @@ export interface AutocompleteProps {
   // If true, the user can delete the value.
   allowDelete?: boolean;
   // The render option function.
-  renderOption?: RenderOptionType;
+  renderOption?: RenderOptionFunctionType;
   // The component's size
   size?: OverridableStringUnion<
     "small" | "medium",
     AutocompletePropsSizeOverrides
   >;
-  // Optional component that is displayed before the text.
-  startAdornment?: JSX.Element;
+  // Optional function that returns component that is displayed before the text.
+  startAdornment?: (row: AutoCompleteClass | null) => JSX.Element | undefined;
   // Instead of a label, a placeholder can be specified.
   placeholder?: string;
   // sx prop for the TextField component.
@@ -240,7 +240,7 @@ export type AutocompleteOptions = AutocompleteProps & LuminaControlOptions;
 /**
  * Autocomplete component that can be created by the ControlFactory component.
  */
-const Autocomplete = React.memo((args: AutocompleteOptions) => {
+const Autocomplete = (args: AutocompleteOptions) => {
   const {
     error,
     label,
@@ -260,6 +260,7 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
     onDeleteSuccessHandler,
     postInvalidateQueryKeys: postInvalidateQueryKeys_,
     deleteInvalidateQueryKeys: deleteInvalidateQueryKeys_,
+    renderOption: renderOption_,
     ...props
   } = args;
   const freeSolo = args.freeSolo ?? false;
@@ -412,14 +413,13 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
               {params.InputProps.endAdornment}
             </>
           ),
-          //startAdornment,
         },
         htmlInput: {
           ...params.inputProps,
         },
       };
       if (startAdornment) {
-        slotProps.startAdornment = startAdornment;
+        slotProps.input.startAdornment = startAdornment(value as any);
       }
       return (
         <TextField
@@ -437,6 +437,7 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
       );
     },
     [
+      value,
       label,
       error,
       required,
@@ -453,7 +454,7 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
   /**
    * This function is used to render the options in the Autocomplete component.
    */
-  const renderOption = React.useCallback<RenderOptionFunctionType>(
+  const renderOptionLocal = React.useCallback<RenderOptionFunctionType>(
     (props, option, state) => {
       const { key, ...optionProps } = props;
       return (
@@ -476,6 +477,11 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
       );
     },
     [queryContext.isLoading, allowDelete, confirm, mutationDeleteContext]
+  );
+
+  const renderOption = React.useMemo(
+    () => renderOption_ ?? renderOptionLocal,
+    [renderOption_, renderOptionLocal]
   );
 
   /**
@@ -523,6 +529,8 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
       </FormControl>
     </>
   );
-});
+};
 
-export default Autocomplete;
+export default React.memo(Autocomplete) as (
+  props: AutocompleteOptions
+) => JSX.Element;

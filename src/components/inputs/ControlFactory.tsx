@@ -51,6 +51,7 @@ export interface ControlFactoryProps {
   switchOptions?: SwitchProps;
   datePickerOptions?: DatePickerProps;
   autoCompleteOptions?: AutocompleteProps;
+  countrySelectOptions?: AutocompleteProps;
 }
 
 export type ControlFactoryOptions = ControlFactoryProps;
@@ -136,7 +137,7 @@ const ControlFactory = React.memo(
           onBlur={onBlurTextField}
         />
       );
-    } else if (fieldColumn.type === "autocomplete") {
+    } else if (["autocomplete", "countryselect"].includes(fieldColumn.type)) {
       const { helperText, disabled, ...props } = options as AutocompleteOptions;
       return (
         <Autocomplete

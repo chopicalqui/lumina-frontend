@@ -65,6 +65,7 @@ export interface MetaInfoType {
     switch?: SwitchOptions;
     datapicker?: DatePickerOptions<any>;
     autocomplete?: AutocompleteOptions;
+    countryselect?: AutocompleteOptions;
   };
 }
 
@@ -99,7 +100,12 @@ export type MuiOptionsType =
   | DatePickerOptions<any>;
 
 // TODO: Update this type to include new MUI controls
-export type MuiType = "textfield" | "switch" | "datepicker" | "autocomplete";
+export type MuiType =
+  | "textfield"
+  | "switch"
+  | "datepicker"
+  | "autocomplete"
+  | "countryselect";
 export type ControlValueType =
   | string
   | boolean
@@ -228,7 +234,7 @@ export const checkStateForErrors = (state: ControlFactoryReducerState) => {
         verifyTextFieldDefault(errorOptions);
         // Perform the custom validation
         fieldColumn?.getError?.(errorOptions);
-      } else if (fieldColumn.type === "autocomplete") {
+      } else if (["autocomplete", "countryselect"].includes(fieldColumn.type)) {
         // Perform the default validation
         verifyTextFieldDefault(errorOptions);
         // Perform the custom validation
@@ -310,7 +316,9 @@ export const getControlValue = (
       Element
     >;
     return onChangeEvent?.target.value ?? onBlurEvent?.target.value ?? "";
-  } else if (fieldColumn?.type === "autocomplete") {
+  } else if (
+    ["autocomplete", "countryselect"].includes(fieldColumn?.type ?? "")
+  ) {
     return reducerOptions.onChangeOptions?.newValue ?? null;
   } else if (fieldColumn?.type === "switch") {
     return reducerOptions.onChangeOptions?.newValue ?? false;
@@ -378,7 +386,9 @@ export const handleOnChangeBlur = (
       states: { ...state.states, [field]: fieldState },
       values: { ...state.values, [field]: newValue },
     };
-  } else if (fieldColumn?.type === "autocomplete") {
+  } else if (
+    ["autocomplete", "countryselect"].includes(fieldColumn?.type ?? "")
+  ) {
     let error: string | undefined = undefined;
     try {
       // If the control looses focus, the errorOptions.value is set to the current value.
@@ -509,6 +519,17 @@ export const createStateColumns = (metaInfo: MetaInfoType[]): StateColumnType =>
           type: "autocomplete",
           options: options as AutocompleteOptions,
         };
+      } else if (mui?.countryselect !== undefined) {
+        const { options, field, label, ...rest } = splitMuiOptions(
+          mui.countryselect
+        );
+        acc[field] = {
+          ...rest,
+          label,
+          field,
+          type: "countryselect",
+          options: options as AutocompleteOptions,
+        };
       } else if (mui?.switch !== undefined) {
         const { options, field, label, ...rest } = splitMuiOptions(mui.switch);
         acc[field] = {
@@ -565,7 +586,13 @@ export const createInitialStateStates = (
     const defaultValue = { edited: false, errorText: undefined };
     // TODO: Update this if statement to include new MUI control
     if (
-      ["textfield", "switch", "datepicker", "autocomplete"].includes(value.type)
+      [
+        "textfield",
+        "switch",
+        "datepicker",
+        "autocomplete",
+        "countryselect",
+      ].includes(value.type)
     ) {
       acc[key] = { ...defaultValue };
     } else {

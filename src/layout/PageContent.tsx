@@ -71,6 +71,11 @@ const PageContent = React.memo(
       me?.hasReadAccess(ScopeEnum.PageAccessToken) === true
     ) {
       componentName = "AccessToken";
+    } else if (
+      pathname === `/${PageEnum.countries}` &&
+      me?.hasReadAccess(ScopeEnum.PageCountry) === true
+    ) {
+      componentName = "Country";
     }
 
     // Lazy load and memorize the component.

@@ -306,7 +306,7 @@ export class Account extends AccountRead {
       scope &&
       (this._roles.includes(AccountRole.Admin) ||
         (this._roles.includes(AccountRole.Auditor) &&
-          ![ScopeEnum.PageAccessToken].includes(scope)))
+          ![ScopeEnum.PageAccessToken, ScopeEnum.PageCountry].includes(scope)))
     );
   }
 

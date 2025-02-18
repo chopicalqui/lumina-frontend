@@ -57,6 +57,7 @@ export interface UseQueryDataGridType<T> extends UseQueryType<T> {
 }
 
 interface IUseQueryResult {
+  url: string;
   queryKey: QueryKey;
   // TODO: statusMessage should be removed and information should always be populated directly by error in error.response.data
   statusMessage: StatusMessage | undefined;
@@ -108,8 +109,6 @@ export const useQuery = <T>({
       refetchOnReconnect,
     ]
   );
-
-  console.log("useQuery", url, disableAutoRefresh, refreshOptions);
 
   const query = useQueryTanstack({
     ...options,

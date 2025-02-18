@@ -221,7 +221,7 @@ export const useDataGridFilterManager = <T,>(
           queryUrl={filterUrl}
           queryKey={filterQueryKey}
           allowDelete={true}
-          startAdornment={<SaveIcon fontSize="small" sx={{ mr: 1 }} />}
+          startAdornment={() => <SaveIcon fontSize="small" sx={{ mr: 1 }} />}
           sxTextfield={{
             "& .MuiInput-underline:before": {
               borderBottonWidht: "1px",

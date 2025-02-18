@@ -32,7 +32,7 @@ import {
 } from "@mui/x-data-grid";
 import { invalidateQueryKeys } from "../../../consts";
 import { GridToolbarContainer } from "@mui/x-data-grid";
-import { GridApi, UseDataGridScopeResult } from "./useDataGridScopeInfo";
+import { UseDataGridScopeResult } from "./useDataGridScopeInfo";
 import { UseDataGridFilterManagerResults } from "./useDataGridFilterManager";
 
 /**
@@ -64,8 +64,6 @@ export interface DefaultDataGridToolbarOptions {
  */
 export interface UseDefaultDataGridToolbarOptions<T>
   extends DefaultDataGridToolbarOptions {
-  // Allows interacting with the DataGrid
-  apiRef: React.MutableRefObject<GridApi>;
   // Additional elements for the toolbar.
   elements?: JSX.Element[];
   // General information about the DataGrid.

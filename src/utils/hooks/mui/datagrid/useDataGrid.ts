@@ -136,7 +136,6 @@ export const useDataGrid = <T>({
   const dataGridToolbar = useDefaultDataGridToolbar(
     React.useMemo(
       () => ({
-        apiRef,
         elements,
         scopeInfo,
         filterManager,
@@ -145,7 +144,6 @@ export const useDataGrid = <T>({
         onCreateButtonClick,
       }),
       [
-        apiRef,
         elements,
         scopeInfo,
         filterManager,

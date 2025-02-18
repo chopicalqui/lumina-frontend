@@ -21,11 +21,13 @@
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import TimelineIcon from "@mui/icons-material/Timeline";
+import PublicIcon from "@mui/icons-material/Public";
 import { type Navigation } from "@toolpad/core/AppProvider";
 
 export enum PageEnum {
   accounts = "accounts",
   access_tokens = "access-tokens",
+  countries = "countries",
 }
 
 export const NAVIGATION: Navigation = [
@@ -49,5 +51,10 @@ export const NAVIGATION: Navigation = [
     segment: PageEnum.access_tokens,
     title: "Access Tokens",
     icon: <TimelineIcon />,
+  },
+  {
+    segment: PageEnum.countries,
+    title: "Countries",
+    icon: <PublicIcon />,
   },
 ];

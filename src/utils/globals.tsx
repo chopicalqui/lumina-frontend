@@ -76,8 +76,10 @@ export enum DetailsDialogMode {
 export enum ScopeEnum {
   PageAccount = "e4f9c2cd-3500-4a5c-be7a-673a24e9f873",
   PageAccessToken = "5c4da514-4545-4628-8b10-1bcebf6289a1",
+  PageCountry = "e7904334-aa1a-454d-9d4b-0dfe895f959b",
   DataGridAccount = "a822f003-e4d4-49a0-afac-25e4cd85f55d",
   DataGridAccessToken = "f1bbfa7f-44cc-4ba7-a296-05a16a5d0eec",
+  DataGridCountry = "f151d8de-ee22-4fe4-803c-58a3cafe73b3",
 }
 
 type EnumTypes = typeof AccountRole;
