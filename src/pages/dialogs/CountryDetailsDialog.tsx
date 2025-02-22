@@ -78,7 +78,7 @@ const CountryDetailsDialog = React.memo(
       <DetailsDialog
         {...props}
         mode={dialogState.mode}
-        maxWidth="xs"
+        maxWidth="sm"
         fullWidth
         isLoading={queryContext.isLoading}
         controlContext={controlContext}
@@ -95,7 +95,9 @@ const CountryDetailsDialog = React.memo(
             <Grid size={6}>
               <ControlFactory field="phone" context={controlContext} />
             </Grid>
-            <Grid size={6}>CountrySelect</Grid>
+            <Grid size={6}>
+              <ControlFactory field="code" context={controlContext} />
+            </Grid>
           </Grid>
         </Paper>
         <Paper sx={{ p: 2, mb: 2 }}>

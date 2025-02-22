@@ -22,9 +22,13 @@
 import React from "react";
 import Autocomplete, { AutocompleteOptions } from "./Autocomplete";
 import {
+  CountryLookup,
   queryKeyCountriesLookup,
   URL_COUNTRIES_LOOKUP,
+  URL_COUNTRY_FLAGS,
 } from "../../models/country";
+import { AutocompleteClass } from "../../utils/globals";
+import { Box } from "@mui/material";
 
 const CountrySelect = (props: AutocompleteOptions) => {
   return (
@@ -32,6 +36,46 @@ const CountrySelect = (props: AutocompleteOptions) => {
       {...props}
       queryUrl={URL_COUNTRIES_LOOKUP}
       queryKey={queryKeyCountriesLookup}
+      renderOption={React.useCallback(
+        (
+          props: React.HTMLAttributes<HTMLLIElement> & { key: any },
+          option: AutocompleteClass
+        ) => {
+          const result = option as CountryLookup;
+          return (
+            <Box
+              component="li"
+              sx={{ "& > img": { mr: 2, flexShrink: 0 } }}
+              {...props}
+            >
+              <img
+                loading="lazy"
+                width="30"
+                key={"img_" + props.id}
+                srcSet={
+                  URL_COUNTRY_FLAGS + "/" + result.code.toLowerCase() + " 2x"
+                }
+                src={URL_COUNTRY_FLAGS + "/" + result.code.toLowerCase()}
+              />
+              {result.label} ({result.code})
+            </Box>
+          );
+        },
+        []
+      )}
+      startAdornment={React.useCallback((row: AutocompleteClass | null) => {
+        const result = row as CountryLookup | null;
+        return result ? (
+          <img
+            width="30"
+            style={{ marginRight: "5px" }}
+            key={"img_" + result.id}
+            srcSet={`${URL_COUNTRY_FLAGS}/${result.code.toLowerCase()} 2x`}
+            src={`${URL_COUNTRY_FLAGS}/${result.code.toLowerCase()}`}
+            alt={result.label}
+          />
+        ) : undefined;
+      }, [])}
     />
   );
 };

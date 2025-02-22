@@ -29,7 +29,7 @@ export type ClassType<T> = new (...args: any[]) => T;
 /**
  * This type is used to define the auto-complete options in the application.
  */
-export type AutoCompleteOption = {
+export type AutocompleteOption = {
   id: string | number;
   label: string;
 };
@@ -37,11 +37,11 @@ export type AutoCompleteOption = {
 /**
  * This class is used to define the auto-complete options in the application.
  */
-export class AutoCompleteClass implements AutoCompleteOption {
+export class AutocompleteClass implements AutocompleteOption {
   id: string | number;
   label: string;
 
-  constructor(data: AutoCompleteOption) {
+  constructor(data: AutocompleteOption) {
     this.id = data.id;
     this.label = data.label;
   }
@@ -100,7 +100,7 @@ export const getEnumNames = (enumClass: EnumTypes) => {
 export const getAutocompleteOption = (
   enumClass: EnumTypes,
   type?: any
-): AutoCompleteOption => {
+): AutocompleteOption => {
   return typeof type === "number"
     ? { id: type, label: enumClass[type]?.replace(/_/g, " ") ?? "" }
     : type;
@@ -110,14 +110,14 @@ export const getAutocompleteOption = (
  * This function is used to get the value of an auto-complete field.
  */
 export const valueGetterAutocompleteOption = (
-  value: AutoCompleteOption
+  value: AutocompleteOption
 ): string => value.label;
 
 /**
  * This function is used to get the value of an auto-complete list.
  */
 export const valueGetterAutocompleteOptionList = (
-  value: AutoCompleteOption[]
+  value: AutocompleteOption[]
 ): string => value.map((x) => x.label).join("; ");
 
 /**
@@ -126,10 +126,10 @@ export const valueGetterAutocompleteOptionList = (
 export const renderCellAutocompleteOptionList = (
   cell: GridRenderCellParams<any>
 ) => {
-  const result = cell.row[cell.field] as AutoCompleteOption[];
+  const result = cell.row[cell.field] as AutocompleteOption[];
   return (
     <Stack direction="row" spacing={1}>
-      {result.map((x: AutoCompleteOption) => (
+      {result.map((x: AutocompleteOption) => (
         <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
       ))}
     </Stack>
@@ -181,7 +181,7 @@ export const getFinalDayjs = (value?: dayjs.Dayjs) =>
 /**
  * This function is used to get the final value of the final Autocomplete value.
  */
-export const getFinalAutoCompleteValue = (value: AutoCompleteOption) =>
+export const getFinalAutoCompleteValue = (value: AutocompleteOption) =>
   Array.isArray(value) ? value.map((x) => x.id) : value.id;
 
 /*
@@ -189,7 +189,7 @@ export const getFinalAutoCompleteValue = (value: AutoCompleteOption) =>
  */
 export const getAutocompleteOptions = (
   enumClass: EnumTypes
-): AutoCompleteOption[] => {
+): AutocompleteOption[] => {
   const result = Object.keys(enumClass)
     .filter((item) => !isNaN(+item))
     .map((item) => {

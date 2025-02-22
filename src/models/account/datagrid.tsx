@@ -21,7 +21,7 @@
 
 import React from "react";
 import { GridFilterModel } from "@mui/x-data-grid";
-import { AutoCompleteClass } from "../../utils/globals";
+import { AutocompleteClass } from "../../utils/globals";
 import { GridInitialState } from "../../utils/hooks/mui/datagrid/useDataGridScopeInfo";
 import { useQuery } from "../../utils/hooks/tanstack/useQuery";
 import { axiosGet } from "../../utils/axios";
@@ -31,7 +31,7 @@ import { QueryKey } from "@tanstack/react-query";
 /**
  *
  */
-export class DataGridFilterLookup extends AutoCompleteClass {
+export class DataGridFilterLookup extends AutocompleteClass {
   public readonly filter: GridFilterModel;
   constructor(data: any) {
     super(data);

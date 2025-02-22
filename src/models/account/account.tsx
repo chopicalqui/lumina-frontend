@@ -31,7 +31,7 @@ import {
   getFinalAutoCompleteValue,
   getAutocompleteOptions,
   valueGetterAutocompleteOptionList,
-  AutoCompleteOption,
+  AutocompleteOption,
   renderCellEmail,
 } from "../../utils/globals";
 import {
@@ -146,7 +146,7 @@ export const META_INFO: MetaInfoType[] = [
        * Per default, renderCell uses the output of valueGetter to render the cell. Nevertheless,
        * we can override this behavior by providing a custom renderCell function.
        */
-      renderCell: (cell: GridRenderCellParams<AutoCompleteOption[]>) =>
+      renderCell: (cell: GridRenderCellParams<AutocompleteOption[]>) =>
         renderCellAutocompleteOptionList(cell),
     },
     mui: {

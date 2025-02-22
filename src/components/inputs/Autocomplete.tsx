@@ -34,7 +34,7 @@ import {
 } from "@mui/material";
 import React from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { AutoCompleteClass, AutoCompleteOption } from "../../utils/globals";
+import { AutocompleteClass as AutoCompleteClass } from "../../utils/globals";
 import { QueryKey } from "@tanstack/react-query";
 import {
   AutocompleteChangeReason,
@@ -62,13 +62,13 @@ const filter = createFilterOptions<AutoCompleteClass>();
  * The AutocompleteProps type.
  */
 export type MuiAutocompleteProps<
-  T extends AutoCompleteClass = AutoCompleteClass,
+  A extends AutoCompleteClass = AutoCompleteClass,
   Multiple extends boolean | undefined = false,
   DisableClearable extends boolean | undefined = false,
   FreeSolo extends boolean | undefined = false,
   ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"],
 > = MuiAutocompleteProps_<
-  T,
+  A,
   Multiple,
   DisableClearable,
   FreeSolo,
@@ -309,13 +309,13 @@ const Autocomplete = (args: AutocompleteOptions) => {
   );
 
   // Fetch the data from the backend.
-  const queryContext = useQuery<AutocompleteClass[]>(
+  const queryContext = useQuery<AutoCompleteClass[]>(
     React.useMemo(
       () => ({
         url: queryUrl,
         queryFn: async () => axiosGet(queryUrl ?? ""),
-        select: (data: AutocompleteClass[]) =>
-          data.map((x) => x as AutocompleteClass),
+        select: (data: AutoCompleteClass[]) =>
+          data.map((x) => x as AutoCompleteClass),
         queryKey: queryKey ?? [],
         enabled: async && open,
       }),
@@ -338,17 +338,11 @@ const Autocomplete = (args: AutocompleteOptions) => {
         onSuccess: (data: unknown) => {
           if (stateValue) {
             if (data) {
-              stateValue.push(
-                new AutoCompleteClass(data as AutoCompleteOption)
-              );
+              stateValue.push(data as AutoCompleteClass);
               onChange?.(event, stateValue, "createOption");
             }
           } else {
-            onChange?.(
-              event,
-              new AutoCompleteClass(data as AutoCompleteOption),
-              "createOption"
-            );
+            onChange?.(event, data as AutoCompleteClass, "createOption");
           }
         },
       });

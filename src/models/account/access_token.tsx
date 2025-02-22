@@ -22,7 +22,7 @@
 import React from "react";
 import { NamedModelBase } from "../common";
 import {
-  AutoCompleteOption,
+  AutocompleteOption,
   getFinalAutoCompleteValue,
   getFinalDayjs,
   renderCellAutocompleteOptionList,
@@ -103,7 +103,7 @@ export const META_INFO: MetaInfoType[] = [
        * Per default, renderCell uses the output of valueGetter to render the cell. Nevertheless,
        * we can override this behavior by providing a custom renderCell function.
        */
-      renderCell: (cell: GridRenderCellParams<AutoCompleteOption[]>) =>
+      renderCell: (cell: GridRenderCellParams<AutocompleteOption[]>) =>
         renderCellAutocompleteOptionList(cell),
     },
     mui: {
@@ -190,7 +190,7 @@ export class AccessToken extends NamedModelBase {
   public readonly value?: string;
   public readonly revoked: boolean;
   public readonly expiration?: dayjs.Dayjs;
-  public readonly scopes: AutoCompleteOption[];
+  public readonly scopes: AutocompleteOption[];
   public readonly created_at?: dayjs.Dayjs;
 
   constructor(data: any) {

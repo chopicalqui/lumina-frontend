@@ -36,7 +36,7 @@ import { useMutation } from "../../tanstack/useMutation";
 import { axiosPut } from "../../../axios";
 import { invalidateQueryKeys } from "../../../consts";
 import { QueryKey } from "@tanstack/react-query";
-import { AutoCompleteClass } from "../../../globals";
+import { AutocompleteClass } from "../../../globals";
 import { UseDataGridScopeResult } from "./useDataGridScopeInfo";
 
 // Object used to clear the DataGrid filter.
@@ -192,7 +192,7 @@ export const useDataGridFilterManager = <T,>(
    * Called when a new Filter item was successfully created.
    */
   const onCreateSuccessHandler = React.useCallback(
-    (data: AutoCompleteClass) => {
+    (data: AutocompleteClass) => {
       invalidateQueryKeys(settingsQueryKey);
       setFilter(data as DataGridFilterLookup);
     },

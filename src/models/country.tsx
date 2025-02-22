@@ -21,16 +21,12 @@
 
 import { GridRenderCellParams } from "@mui/x-data-grid";
 import { MetaInfoType } from "../components/inputs/controlFactoryUtils";
-import { AutoCompleteClass } from "../utils/globals";
+import { AutocompleteClass } from "../utils/globals";
 import { ChildQueryOptions } from "../utils/hooks/tanstack/useQuery";
 import { useQueryItems } from "../utils/hooks/tanstack/useQueryItems";
-import { ModelBase, NamedModelBase } from "./common";
+import { ModelBase } from "./common";
 import { API_PATH_PREFIX } from "../utils/consts";
 import { useQueryItemById } from "../utils/hooks/tanstack/useQueryItemById";
-import {
-  AutocompleteRenderInputParams,
-  AutocompleteRenderOptionState,
-} from "@mui/material";
 
 export const queryKeyCountries = ["countries"];
 export const queryKeyCountriesLookup = ["countries", "lookup"];
@@ -67,32 +63,15 @@ export const META_INFO: MetaInfoType[] = [
       headerName: "Name",
       type: "string",
       description: "The name of the account.",
+      valueGetter: (value: CountryLookup) => value.label,
     },
     mui: {
       countryselect: {
         field: "name",
         label: "Name",
-        disabled: true,
+        disabled: false,
         noSubmit: true,
         helperText: "The country's flag.",
-        /*startAdornment: (row: AutoCompleteClass | null) => {
-          const result = row as CountryLookup | null;
-          console.log("result", result);
-          return result ? (
-            <img
-              width="30"
-              key={"img_" + result.id}
-              srcSet={`${URL_COUNTRY_FLAGS}/${result.code.toLowerCase()} 2x`}
-              src={`${URL_COUNTRY_FLAGS}/${result.code.toLowerCase()}`}
-              alt={result.label}
-            />
-          ) : undefined;
-        },
-        renderOption: (
-          props: React.HTMLAttributes<HTMLLIElement> & { key: any },
-          option: AutoCompleteClass,
-          state: AutocompleteRenderOptionState
-        ) => <></>,*/
       },
     },
   },
@@ -184,7 +163,7 @@ export const META_INFO: MetaInfoType[] = [
   },
 ];
 
-export class CountryLookup extends AutoCompleteClass {
+export class CountryLookup extends AutocompleteClass {
   public readonly code: string;
   constructor(data: any) {
     super(data);
@@ -192,7 +171,8 @@ export class CountryLookup extends AutoCompleteClass {
   }
 }
 
-export class CountryRead extends NamedModelBase {
+export class CountryRead extends ModelBase {
+  public readonly name: CountryLookup;
   public readonly code: string;
   public readonly phone: string;
   public readonly default: boolean;
@@ -200,7 +180,8 @@ export class CountryRead extends NamedModelBase {
   public readonly flagPath: string;
 
   constructor(data: any) {
-    super(data.name, data.id);
+    super(data.id);
+    this.name = { id: data.id, label: data.name, code: data.code };
     this.code = data.code;
     this.phone = data.phone;
     this.default = data.default;

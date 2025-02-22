@@ -23,7 +23,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import { TextFieldOptions } from "./TextField";
 import { LuminaControlOptions } from "./common";
 import { SwitchOptions } from "./Switch";
-import { AutoCompleteOption, DetailsDialogMode } from "../../utils/globals";
+import { AutocompleteOption, DetailsDialogMode } from "../../utils/globals";
 import { DatePickerOptions } from "./DatePicker";
 import { Dayjs } from "dayjs";
 import {
@@ -110,7 +110,7 @@ export type ControlValueType =
   | string
   | boolean
   | number
-  | AutoCompleteOption
+  | AutocompleteOption
   | Dayjs
   | null // Only for datepicker
   | Date;
