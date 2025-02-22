@@ -58,40 +58,47 @@ interface PageContentOptions {
  */
 const PageContent = React.memo(
   ({ pathname, me, isError, statusMessage }: PageContentOptions) => {
-    let component: string | undefined = undefined;
-    if (!me) {
-      if (isError && statusMessage) {
-        return (
-          <Alert severity={statusMessage.severity}>
-            {statusMessage.message}
-          </Alert>
-        );
-      }
-      return;
-    }
+    let componentName: string | undefined = undefined;
 
     // Obtain the right component.
     if (
       pathname === `/${PageEnum.accounts}` &&
-      me.hasReadAccess(ScopeEnum.PageAccount) === true
+      me?.hasReadAccess(ScopeEnum.PageAccount) === true
     ) {
-      component = "Account";
+      componentName = "Account";
     } else if (
       pathname === `/${PageEnum.access_tokens}` &&
-      me.hasReadAccess(ScopeEnum.PageAccessToken) === true
+      me?.hasReadAccess(ScopeEnum.PageAccessToken) === true
     ) {
-      component = "AccessToken";
+      componentName = "AccessToken";
+    } else if (
+      pathname === `/${PageEnum.countries}` &&
+      me?.hasReadAccess(ScopeEnum.PageCountry) === true
+    ) {
+      componentName = "Country";
     }
 
-    if (!component) return;
+    // Lazy load and memorize the component.
+    const component = React.useMemo(
+      () => componentName && LazyLoad(componentName),
+      [componentName]
+    );
+
+    if (!me && isError && statusMessage) {
+      return (
+        <Alert severity={statusMessage.severity}>{statusMessage.message}</Alert>
+      );
+    }
 
     return (
-      <Paper
-        sx={{ mt: 3, ml: 2, mr: 2, mb: 2, p: 1, height: "100%" }}
-        square={false}
-      >
-        {LazyLoad(component)}
-      </Paper>
+      <>
+        <Paper
+          sx={{ mt: 3, ml: 2, mr: 2, mb: 2, p: 1, height: "100%" }}
+          square={false}
+        >
+          {component}
+        </Paper>
+      </>
     );
   }
 );

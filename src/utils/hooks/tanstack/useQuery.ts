@@ -26,7 +26,7 @@ import {
   UseQueryResult as UseQueryResultTanstack,
   QueryKey,
 } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import { getStatusMessage } from "./useMutation";
 import { StatusMessage } from "../../../models/common";
 import { ScopeEnum } from "../../globals";
@@ -42,6 +42,8 @@ export interface ChildQueryOptions {
 }
 
 export interface UseQueryType<T> extends UseQueryOptions<T>, ChildQueryOptions {
+  // The URL used by the queryFn function.
+  url: string;
   // Object containing the query parameters.
   params?: T;
   // If false, it disables this query from automatically running.
@@ -55,42 +57,47 @@ export interface UseQueryDataGridType<T> extends UseQueryType<T> {
 }
 
 interface IUseQueryResult {
+  url: string;
   queryKey: QueryKey;
+  // TODO: statusMessage should be removed and information should always be populated directly by error in error.response.data
   statusMessage: StatusMessage | undefined;
 }
 interface IUseQueryMetaInfo extends ChildQueryOptions {
   metaInfo: MetaInfoType[];
 }
-export type UseQueryResult<T> = IUseQueryResult & UseQueryResultTanstack<T>;
+export type UseQueryResult<T> = IUseQueryResult &
+  UseQueryResultTanstack<T, AxiosError<StatusMessage>>;
 export type UseQueryForDataGridResult<T> = UseQueryResult<T> &
   IUseQueryMetaInfo;
 
 // This custom hook can be used to issue a GET request to the server.
-export const useQuery = <T>(
-  props: UseQueryDataGridType<T>
-): UseQueryForDataGridResult<T> => {
+export const useQuery = <T>({
+  url,
+  scope,
+  staleTime,
+  gcTime,
+  refetchInterval,
+  refetchOnWindowFocus,
+  refetchOnMount,
+  refetchOnReconnect,
+  metaInfo,
+  queryKey,
+  disableAutoRefresh,
+  ...options
+}: UseQueryDataGridType<T>): UseQueryForDataGridResult<T> => {
   let statusMessage: StatusMessage | undefined = undefined;
-  const {
-    scope,
-    staleTime,
-    gcTime,
-    refetchInterval,
-    refetchOnWindowFocus,
-    refetchOnMount,
-    refetchOnReconnect,
-    metaInfo,
-    queryKey,
-    disableAutoRefresh,
-    ...options
-  } = props;
   const refreshOptions = React.useMemo(
     () => ({
-      staleTime: disableAutoRefresh ? Infinity : staleTime,
+      staleTime: disableAutoRefresh ? Infinity : (staleTime ?? 0),
       gcTime: disableAutoRefresh ? Infinity : gcTime,
       refetchInterval: disableAutoRefresh ? false : refetchInterval,
-      refetchOnWindowFocus: disableAutoRefresh ? false : refetchOnWindowFocus,
-      refetchOnMount: disableAutoRefresh ? "always" : refetchOnMount,
-      refetchOnReconnect: disableAutoRefresh ? false : refetchOnReconnect,
+      refetchOnWindowFocus: disableAutoRefresh
+        ? false
+        : (refetchOnWindowFocus ?? "always"),
+      refetchOnMount: disableAutoRefresh ? false : (refetchOnMount ?? "always"),
+      refetchOnReconnect: disableAutoRefresh
+        ? false
+        : (refetchOnReconnect ?? true),
     }),
     [
       disableAutoRefresh,
@@ -108,6 +115,16 @@ export const useQuery = <T>(
     ...refreshOptions,
     queryKey: queryKey,
     enabled: options.enabled ?? true,
+    retry: React.useCallback((failureCount: number, error: Error) => {
+      // Abort retries if the error status code is 401
+      if (
+        axios.isAxiosError(error) &&
+        [401, 500].includes(error.response?.status ?? 0)
+      ) {
+        return false; // Do not retry
+      }
+      return failureCount < 3; // Retry up to 3 times for other errors
+    }, []),
   }) as UseQueryResultTanstack<T, AxiosError<StatusMessage>>;
 
   statusMessage = React.useMemo(
@@ -121,13 +138,15 @@ export const useQuery = <T>(
     [query.isError, query.isSuccess, query.data, query.error]
   );
 
-  return React.useMemo(() => {
-    return {
+  return React.useMemo(
+    () => ({
       ...query,
+      url,
       scope,
       queryKey: queryKey,
       statusMessage,
       metaInfo: metaInfo ?? [],
-    };
-  }, [query, scope, metaInfo, statusMessage, queryKey]);
+    }),
+    [url, query, scope, metaInfo, statusMessage, queryKey]
+  );
 };

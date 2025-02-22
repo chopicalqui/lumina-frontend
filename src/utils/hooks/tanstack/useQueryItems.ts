@@ -39,6 +39,7 @@ export const useQueryItems = <T>(
   useQuery(
     React.useMemo(
       () => ({
+        url,
         queryKey: queryKey,
         queryFn: async () => axiosGet<T[]>(url),
         select: (data: T[]) => data.map((x) => new ClassRef(x)),

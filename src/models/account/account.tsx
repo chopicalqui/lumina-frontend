@@ -31,7 +31,7 @@ import {
   getFinalAutoCompleteValue,
   getAutocompleteOptions,
   valueGetterAutocompleteOptionList,
-  AutoCompleteOption,
+  AutocompleteOption,
   renderCellEmail,
 } from "../../utils/globals";
 import {
@@ -40,14 +40,14 @@ import {
 } from "../../utils/hooks/tanstack/useQuery";
 import { NamedModelBase, verifyEmail } from "../common";
 import {
-  queryKeyAccounts,
   queryKeyAccountMe,
+  queryKeyAccounts,
   URL_ACCOUNTS,
   URL_ACCOUNTS_ME,
 } from "./common";
 import { axiosDelete, axiosGet } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
-import { queryClient } from "../../utils/consts";
+import { invalidateQueryKeys } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 import dayjs from "dayjs";
 import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
@@ -146,17 +146,37 @@ export const META_INFO: MetaInfoType[] = [
        * Per default, renderCell uses the output of valueGetter to render the cell. Nevertheless,
        * we can override this behavior by providing a custom renderCell function.
        */
-      renderCell: (cell: GridRenderCellParams<AutoCompleteOption[]>) =>
-        renderCellAutocompleteOptionList(cell, "roles"),
+      renderCell: (cell: GridRenderCellParams<AutocompleteOption[]>) =>
+        renderCellAutocompleteOptionList(cell),
     },
     mui: {
       autocomplete: {
         field: "roles",
         label: "Roles",
+        disabled: true,
         multiple: true,
         options: getAutocompleteOptions(AccountRole),
         helperText: "The user's role memberships.",
         getFinalValue: getFinalAutoCompleteValue,
+      },
+    },
+  },
+  {
+    dataGridInfo: {
+      field: "lastLogin",
+      headerName: "Last Login",
+      type: "dateTime",
+      description: "The date [UTC] the user logged in the last time.",
+      valueGetter: valueGetterDate,
+    },
+    mui: {
+      datapicker: {
+        field: "lastLogin",
+        label: "Last Login",
+        required: false,
+        disabled: true,
+        noSubmit: true,
+        helperText: "The date the user logged in the last time.",
       },
     },
   },
@@ -177,13 +197,20 @@ export const META_INFO: MetaInfoType[] = [
         /**
          * This optional function is used to validate the input of the Active Until field.
          */
-        getError: ({ value, state, label }: GetErrorOptions) => {
-          const activeFrom = value as dayjs.Dayjs | undefined;
+        getError: ({ state, label }: GetErrorOptions) => {
+          const activeFrom = state.values.activeFrom as dayjs.Dayjs | undefined;
           const activeUntil = state.values.activeUntil as
             | dayjs.Dayjs
-            | undefined;
-          if (activeFrom && activeUntil && activeUntil.isBefore(activeFrom)) {
-            return `The ${label} must be before the Active Until date.`;
+            | undefined
+            | null;
+          if (
+            activeFrom &&
+            activeUntil &&
+            (activeUntil.isBefore(activeFrom) || activeUntil.isSame(activeFrom))
+          ) {
+            throw new Error(
+              `The ${label} must be before the Active Until date.`
+            );
           }
         },
       },
@@ -206,32 +233,20 @@ export const META_INFO: MetaInfoType[] = [
         /**
          * This optional function is used to validate the input of the Active Until field.
          */
-        getError: ({ value, state, label }: GetErrorOptions) => {
+        getError: ({ state, label }: GetErrorOptions) => {
           const activeFrom = state.values.activeFrom as dayjs.Dayjs | undefined;
-          const activeUntil = value as dayjs.Dayjs | undefined;
-          if (activeFrom && activeUntil && activeUntil.isBefore(activeFrom)) {
-            return `The ${label} must be after the Active From date.`;
+          const activeUntil = state.values.activeUntil as
+            | dayjs.Dayjs
+            | undefined
+            | null;
+          if (
+            activeFrom &&
+            activeUntil &&
+            (activeUntil.isBefore(activeFrom) || activeUntil.isSame(activeFrom))
+          ) {
+            throw new Error(`The ${label} must be after the Active From date.`);
           }
         },
-      },
-    },
-  },
-  {
-    dataGridInfo: {
-      field: "lastLogin",
-      headerName: "Last Login",
-      type: "dateTime",
-      description: "The date [UTC] the user logged in the last time.",
-      valueGetter: valueGetterDate,
-    },
-    mui: {
-      datapicker: {
-        field: "lastLogin",
-        label: "Last Login",
-        required: false,
-        disabled: true,
-        noSubmit: true,
-        helperText: "The date the user logged in the last time.",
       },
     },
   },
@@ -273,6 +288,7 @@ export class Account extends AccountRead {
   public readonly sidebarCollapsed: boolean;
   public readonly tableDensity: string;
   public readonly image: string;
+  public readonly expiration: Date;
   private readonly _roles: AccountRole[];
 
   constructor(data: any) {
@@ -281,6 +297,7 @@ export class Account extends AccountRead {
     this.sidebarCollapsed = data.sidebar_collapsed;
     this.tableDensity = data.table_density;
     this.image = data.avatar;
+    this.expiration = new Date(data.expiration);
     this._roles = data.roles;
   }
 
@@ -289,7 +306,7 @@ export class Account extends AccountRead {
       scope &&
       (this._roles.includes(AccountRole.Admin) ||
         (this._roles.includes(AccountRole.Auditor) &&
-          ![ScopeEnum.PageAccessToken].includes(scope)))
+          ![ScopeEnum.PageAccessToken, ScopeEnum.PageCountry].includes(scope)))
     );
   }
 
@@ -328,9 +345,9 @@ export const useQueryMe = () =>
   useQuery(
     React.useMemo(
       () => ({
+        url: URL_ACCOUNTS_ME,
         queryKey: queryKeyAccountMe,
         disableAutoRefresh: true,
-        retry: 0,
         queryFn: async () => axiosGet<Account>(URL_ACCOUNTS_ME),
         select: (data: Account) => new Account(data),
       }),
@@ -370,9 +387,8 @@ export const useDeleteAccount = () =>
   useDeleteMutation(
     React.useMemo(
       () => ({
-        mutationFn: async (data: any) => axiosDelete(`${URL_ACCOUNTS}/${data}`),
-        onSuccess: async () =>
-          await queryClient.invalidateQueries({ queryKey: queryKeyAccounts }),
+        mutationFn: async (id: string) => axiosDelete(URL_ACCOUNTS, { id }),
+        onSuccess: () => invalidateQueryKeys(queryKeyAccounts),
       }),
       []
     )

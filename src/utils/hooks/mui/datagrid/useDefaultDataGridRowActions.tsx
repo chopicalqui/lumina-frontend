@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MyAwesomeProject. If not, see <https://www.gnu.org/licenses/>.
+ * along with Lumina. If not, see <https://www.gnu.org/licenses/>.
  *
  * @author Lukas Reiter
  * @copyright Copyright (C) 2024 Lukas Reiter
@@ -31,17 +31,14 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { Account } from "../../../models/account/account";
-import { UseQueryForDataGridResult } from "../tanstack/useQuery";
+import { UseDataGridScopeResult } from "./useDataGridScopeInfo";
 
 /**
  * Defines the properties for the DataGrid's default row actions.
  */
 export interface UseDefaultDataGridActionsOptions<T> {
-  // The account of the current user.
-  me?: Account;
-  // The properties of the useQuery hook.
-  queryContext: UseQueryForDataGridResult<T>;
+  // Results of hook useDataGridScopeInfo containing general information for the DataGrid.
+  scopeInfo: UseDataGridScopeResult<T>;
   // If present, the DataGrid will have an action to view the current row.
   view?: {
     title?: string;
@@ -64,18 +61,14 @@ export interface UseDefaultDataGridActionsOptions<T> {
 /**
  * This hook returns the default actions for a DataGrid row.
  */
-export const useDefaultDataGridRowActions = <T,>(
-  props: UseDefaultDataGridActionsOptions<T>
-): GridActionsColDef => {
-  const {
-    me,
-    view,
-    edit,
-    queryContext,
-    delete: rawDelete,
-    customActions: rawCustomActions,
-  } = props;
-  const scope = queryContext.scope;
+export const useDefaultDataGridRowActions = <T,>({
+  view,
+  edit,
+  scopeInfo,
+  delete: rawDelete,
+  customActions: rawCustomActions,
+}: UseDefaultDataGridActionsOptions<T>): GridActionsColDef => {
+  const { me, scope } = scopeInfo;
   const result = React.useCallback(
     (
       params: GridRowParams<GridValidRowModel>

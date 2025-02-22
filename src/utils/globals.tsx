@@ -29,7 +29,7 @@ export type ClassType<T> = new (...args: any[]) => T;
 /**
  * This type is used to define the auto-complete options in the application.
  */
-export type AutoCompleteOption = {
+export type AutocompleteOption = {
   id: string | number;
   label: string;
 };
@@ -37,11 +37,11 @@ export type AutoCompleteOption = {
 /**
  * This class is used to define the auto-complete options in the application.
  */
-export class AutoCompleteClass implements AutoCompleteOption {
+export class AutocompleteClass implements AutocompleteOption {
   id: string | number;
   label: string;
 
-  constructor(data: AutoCompleteOption) {
+  constructor(data: AutocompleteOption) {
     this.id = data.id;
     this.label = data.label;
   }
@@ -56,7 +56,7 @@ export enum AccountRole {
   // Full administrative access role
   Admin = 200,
   // Permission to create access tokens
-  Api = 300,
+  Api = 10000,
 }
 
 /*
@@ -76,8 +76,10 @@ export enum DetailsDialogMode {
 export enum ScopeEnum {
   PageAccount = "e4f9c2cd-3500-4a5c-be7a-673a24e9f873",
   PageAccessToken = "5c4da514-4545-4628-8b10-1bcebf6289a1",
+  PageCountry = "e7904334-aa1a-454d-9d4b-0dfe895f959b",
   DataGridAccount = "a822f003-e4d4-49a0-afac-25e4cd85f55d",
   DataGridAccessToken = "f1bbfa7f-44cc-4ba7-a296-05a16a5d0eec",
+  DataGridCountry = "f151d8de-ee22-4fe4-803c-58a3cafe73b3",
 }
 
 type EnumTypes = typeof AccountRole;
@@ -98,7 +100,7 @@ export const getEnumNames = (enumClass: EnumTypes) => {
 export const getAutocompleteOption = (
   enumClass: EnumTypes,
   type?: any
-): AutoCompleteOption => {
+): AutocompleteOption => {
   return typeof type === "number"
     ? { id: type, label: enumClass[type]?.replace(/_/g, " ") ?? "" }
     : type;
@@ -108,34 +110,30 @@ export const getAutocompleteOption = (
  * This function is used to get the value of an auto-complete field.
  */
 export const valueGetterAutocompleteOption = (
-  value: AutoCompleteOption
+  value: AutocompleteOption
 ): string => value.label;
 
 /**
  * This function is used to get the value of an auto-complete list.
  */
 export const valueGetterAutocompleteOptionList = (
-  value: AutoCompleteOption[]
+  value: AutocompleteOption[]
 ): string => value.map((x) => x.label).join("; ");
 
 /**
  * This function is used to render the value of a Autocomplete DataGrid cell.
  */
 export const renderCellAutocompleteOptionList = (
-  cell: GridRenderCellParams<any>,
-  rowName: keyof typeof cell.row
+  cell: GridRenderCellParams<any>
 ) => {
-  // Obtain raw data from the cell
-  if (rowName in cell.row) {
-    const result = cell.row[rowName] as AutoCompleteOption[];
-    return (
-      <Stack direction="row" spacing={1}>
-        {result.map((x: AutoCompleteOption) => (
-          <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
-        ))}
-      </Stack>
-    );
-  }
+  const result = cell.row[cell.field] as AutocompleteOption[];
+  return (
+    <Stack direction="row" spacing={1}>
+      {result.map((x: AutocompleteOption) => (
+        <Chip key={x.id} label={x.label} variant="outlined" color="primary" />
+      ))}
+    </Stack>
+  );
 };
 
 /**
@@ -149,6 +147,15 @@ export const valueGetterDate = (value?: dayjs.Dayjs): Date | undefined =>
  */
 export const renderCellEmail = (cell: GridRenderCellParams<any>) => (
   <Link href={`mailto:${cell.value}`}>{cell.value}</Link>
+);
+
+/**
+ * This function renders an URL DataGrid column cell as a clickable link.
+ */
+export const renderUrl = (cell: GridRenderCellParams<any>) => (
+  <Link href={`mailto:${cell.value}`} target="_blank" rel="noreferrer">
+    {cell.value}
+  </Link>
 );
 
 /**
@@ -174,7 +181,7 @@ export const getFinalDayjs = (value?: dayjs.Dayjs) =>
 /**
  * This function is used to get the final value of the final Autocomplete value.
  */
-export const getFinalAutoCompleteValue = (value: AutoCompleteOption) =>
+export const getFinalAutoCompleteValue = (value: AutocompleteOption) =>
   Array.isArray(value) ? value.map((x) => x.id) : value.id;
 
 /*
@@ -182,7 +189,7 @@ export const getFinalAutoCompleteValue = (value: AutoCompleteOption) =>
  */
 export const getAutocompleteOptions = (
   enumClass: EnumTypes
-): AutoCompleteOption[] => {
+): AutocompleteOption[] => {
   const result = Object.keys(enumClass)
     .filter((item) => !isNaN(+item))
     .map((item) => {

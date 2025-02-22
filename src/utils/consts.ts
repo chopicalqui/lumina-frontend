@@ -20,7 +20,7 @@
  */
 
 import Axios from "axios";
-import { QueryClient, QueryCache } from "@tanstack/react-query";
+import { QueryClient, QueryCache, QueryKey } from "@tanstack/react-query";
 
 export enum MuiLicenseType {
   Community = 10,
@@ -45,12 +45,27 @@ export const env = {
 } as Env;
 
 export const COPYRIGHT_URL = "Copyright (C) Chopicalqui";
+export const APP_NAME = "Lumina";
 export const ORG_NAME = "Lumina Inc.";
 export const ORG_URL = "https://lumina.com";
 export const ORG_LOGO = "/logo.svg";
 export const API_PATH_PREFIX = "/api";
 export const CSRF_TOKEN_HEADER = "X-Token";
 export const ADAPTER_LOCALE = "en-gb";
+// Amount of seconds of inactivity before the session is invalidated. This value should match the session timeout
+// configured in the backend (see environment variable OAUTH2_ACCESS_TOKEN_EXPIRE_MINUTES).
+export const SESSION_TIMEOUT = 840;
+// Amount of seconds before the session expires that a warning is shown.
+export const SESSION_TIMEOUT_WARNING = 4 * 60;
+// The session expiration warning is shown SESSION_TIMEOUT - SESSION_TIMEOUT_WARNING - SESSION_TIMEOUT_BUFFER
+// seconds of inactivity.
+export const SESSION_TIMEOUT_BUFFER = 20;
+
+if (SESSION_TIMEOUT < SESSION_TIMEOUT_WARNING) {
+  throw new Error(
+    "SESSION_TIMEOUT must be greater than SESSION_TIMEOUT_WARNING"
+  );
+}
 
 export const axiosClient = Axios.create({
   baseURL: API_PATH_PREFIX,
@@ -65,3 +80,17 @@ export const queryClient = new QueryClient({
     onError: (err, query) => console.log(err, query),
   }),
 });
+
+/*
+ * Method that allows invalidating query keys.
+ */
+export const invalidateQueryKeys = (
+  ...queryKeys: (QueryKey | undefined | null)[]
+) => {
+  queryKeys
+    .filter(
+      (queryKey): queryKey is QueryKey =>
+        queryKey !== undefined && queryKey !== null
+    ) // Type guard
+    .forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
+};

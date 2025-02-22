@@ -26,6 +26,12 @@ import { theme } from "./layout/theme";
 import { useQuerySession } from "./utils/hooks/tanstack/useQuerySession";
 import PageContent from "./layout/PageContent";
 import { NAVIGATION, PageEnum } from "./layout/NavigationItems";
+import { APP_NAME } from "./utils/consts";
+import { SessionManager } from "./layout/SessionManager";
+
+const BRANDING = {
+  title: APP_NAME.toLocaleUpperCase(),
+};
 
 export default function App() {
   const { session, authentication, meQuery } = useQuerySession();
@@ -35,26 +41,30 @@ export default function App() {
   const isError = meQuery.isError;
 
   return (
-    <AppProvider
-      session={session}
-      authentication={authentication}
-      navigation={NAVIGATION}
-      router={router}
-      theme={theme}
-    >
-      <DashboardLayout
-        disableCollapsibleSidebar
-        defaultSidebarCollapsed={me?.sidebarCollapsed}
-        hideNavigation={session === null}
+    <>
+      <SessionManager account={me} />
+      <AppProvider
+        session={session}
+        authentication={authentication}
+        navigation={NAVIGATION}
+        branding={BRANDING}
+        router={router}
+        theme={theme}
       >
-        <PageContent
-          me={me}
-          isError={isError}
-          statusMessage={statusMessage}
-          pathname={router.pathname}
-          navigate={router.navigate}
-        />
-      </DashboardLayout>
-    </AppProvider>
+        <DashboardLayout
+          disableCollapsibleSidebar
+          defaultSidebarCollapsed={me?.sidebarCollapsed}
+          hideNavigation={session === null}
+        >
+          <PageContent
+            me={me}
+            isError={isError}
+            statusMessage={statusMessage}
+            pathname={router.pathname}
+            navigate={router.navigate}
+          />
+        </DashboardLayout>
+      </AppProvider>
+    </>
   );
 }

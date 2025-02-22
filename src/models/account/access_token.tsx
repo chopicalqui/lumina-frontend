@@ -22,7 +22,7 @@
 import React from "react";
 import { NamedModelBase } from "../common";
 import {
-  AutoCompleteOption,
+  AutocompleteOption,
   getFinalAutoCompleteValue,
   getFinalDayjs,
   renderCellAutocompleteOptionList,
@@ -38,7 +38,7 @@ import {
 } from "./common";
 import { axiosDelete } from "../../utils/axios";
 import { useDeleteMutation } from "../../utils/hooks/tanstack/useDeleteMutation";
-import { queryClient } from "../../utils/consts";
+import { invalidateQueryKeys } from "../../utils/consts";
 import { MetaInfoType } from "../../components/inputs/controlFactoryUtils";
 import dayjs from "dayjs";
 import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
@@ -103,8 +103,8 @@ export const META_INFO: MetaInfoType[] = [
        * Per default, renderCell uses the output of valueGetter to render the cell. Nevertheless,
        * we can override this behavior by providing a custom renderCell function.
        */
-      renderCell: (cell: GridRenderCellParams<AutoCompleteOption[]>) =>
-        renderCellAutocompleteOptionList(cell, "scopes"),
+      renderCell: (cell: GridRenderCellParams<AutocompleteOption[]>) =>
+        renderCellAutocompleteOptionList(cell),
     },
     mui: {
       autocomplete: {
@@ -190,7 +190,7 @@ export class AccessToken extends NamedModelBase {
   public readonly value?: string;
   public readonly revoked: boolean;
   public readonly expiration?: dayjs.Dayjs;
-  public readonly scopes: AutoCompleteOption[];
+  public readonly scopes: AutocompleteOption[];
   public readonly created_at?: dayjs.Dayjs;
 
   constructor(data: any) {
@@ -235,10 +235,9 @@ export const useDeleteAccessTokens = () =>
   useDeleteMutation(
     React.useMemo(
       () => ({
-        mutationFn: async (data: any) =>
-          axiosDelete(`${URL_ME_ACCESS_TOKENS}/${data}`),
-        onSuccess: () =>
-          queryClient.invalidateQueries({ queryKey: queryKeyAccessTokens }),
+        mutationFn: async (id: string) =>
+          axiosDelete(URL_ME_ACCESS_TOKENS, { id }),
+        onSuccess: () => invalidateQueryKeys(queryKeyAccessTokens),
       }),
       []
     )

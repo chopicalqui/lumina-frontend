@@ -25,15 +25,25 @@ import {
   Autocomplete as MuiAutocomplete,
   FormControl,
   TextField,
+  CircularProgress,
+  Box,
+  IconButton,
+  SxProps,
+  Theme,
+  TextFieldVariants,
 } from "@mui/material";
 import React from "react";
-import { AutoCompleteClass, AutoCompleteOption } from "../../utils/globals";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { AutocompleteClass as AutoCompleteClass } from "../../utils/globals";
 import { QueryKey } from "@tanstack/react-query";
 import {
   AutocompleteChangeReason,
+  AutocompletePropsSizeOverrides,
   AutocompleteRenderInputParams,
+  AutocompleteRenderOptionState,
   createFilterOptions,
 } from "@mui/material/Autocomplete";
+import { OverridableStringUnion } from "@mui/types";
 import {
   useMutation,
   UseMutationResult,
@@ -41,8 +51,10 @@ import {
 import { useQuery } from "../../utils/hooks/tanstack/useQuery";
 import { axiosDelete, axiosGet, axiosPost } from "../../utils/axios";
 import { LuminaControlOptions } from "./common";
-import { queryClient } from "../../utils/consts";
+import { invalidateQueryKeys } from "../../utils/consts";
 import { UseMutationAlert } from "../feedback/TanstackAlert";
+import { useConfirmDialog } from "../../utils/hooks/mui/useConfirmDialog";
+import ConfirmationDialog from "../feedback/dialogs/ConfirmDialog";
 
 const filter = createFilterOptions<AutoCompleteClass>();
 
@@ -50,13 +62,13 @@ const filter = createFilterOptions<AutoCompleteClass>();
  * The AutocompleteProps type.
  */
 export type MuiAutocompleteProps<
-  T extends AutoCompleteClass = AutoCompleteClass,
+  A extends AutoCompleteClass = AutoCompleteClass,
   Multiple extends boolean | undefined = false,
   DisableClearable extends boolean | undefined = false,
   FreeSolo extends boolean | undefined = false,
   ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"],
 > = MuiAutocompleteProps_<
-  T,
+  A,
   Multiple,
   DisableClearable,
   FreeSolo,
@@ -114,6 +126,52 @@ export type AutocompleteOnBlurType = (
 ) => void;
 
 /**
+ * The render option function .
+ */
+export type RenderOptionFunctionType = (
+  props: React.HTMLAttributes<HTMLLIElement> & { key: any },
+  option: AutoCompleteClass,
+  state: AutocompleteRenderOptionState
+) => React.ReactNode;
+
+/**
+ * The render option type.
+ */
+type RenderOptionType = {
+  allowDelete?: boolean;
+  isLoading?: boolean;
+  onDelete: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
+  props: React.HTMLAttributes<HTMLLIElement>;
+  option: AutoCompleteClass;
+  state: AutocompleteRenderOptionState;
+};
+
+/**
+ * Render a single option in the Autocomplete component.
+ */
+const RenderOption = React.memo((props: RenderOptionType) => {
+  const { allowDelete, onDelete, option } = props;
+  const { ...optionProps } = props.props;
+  return (
+    <Box
+      component="li"
+      sx={{
+        display: "flex",
+        alignItems: "center",
+      }}
+      {...optionProps}
+    >
+      <span style={{ flexGrow: 1 }}>{option.label}</span>
+      {allowDelete === true ? (
+        <IconButton aria-label="delete" size="small" onClick={onDelete}>
+          <DeleteIcon fontSize="inherit" />
+        </IconButton>
+      ) : undefined}
+    </Box>
+  );
+});
+
+/**
  * Interface for the Autocomplete component.
  *
  * We cannot derive it from the MuiAutocompleteProps because there are conflicting properties.
@@ -129,6 +187,8 @@ export interface AutocompleteProps {
   freeSolo?: boolean;
   // If true, value must be an array and the menu will support multiple selections.
   multiple?: boolean;
+  // The variant of the renderInput component.
+  variant?: TextFieldVariants;
   // Flag to indicate if the component contains an input error.
   error?: boolean;
   // Helper text to display below the input.
@@ -147,6 +207,32 @@ export interface AutocompleteProps {
   onBlur?: AutocompleteOnBlurType;
   // If true, the user can delete the value.
   allowDelete?: boolean;
+  // The render option function.
+  renderOption?: RenderOptionFunctionType;
+  // The component's size
+  size?: OverridableStringUnion<
+    "small" | "medium",
+    AutocompletePropsSizeOverrides
+  >;
+  // Optional function that returns component that is displayed before the text.
+  startAdornment?: (row: AutoCompleteClass | null) => JSX.Element | undefined;
+  // Instead of a label, a placeholder can be specified.
+  placeholder?: string;
+  // sx prop for the TextField component.
+  sxTextfield?: SxProps<Theme>;
+  // Handler that is called before a new POST request is sent to the backend. It allows the parent component to
+  // modify the content of the final POST request body.
+  onCreateHandler?: (name: string) => any;
+  // Handler that is called when a new Autocomplete item is successfully created.
+  onCreateSuccessHandler?: (data: AutoCompleteClass) => void;
+  // Handler that is called when a new Autocomplete item is successfully deleted.
+  onDeleteSuccessHandler?: () => void;
+  // List of query keys that must be invalidated when a new Autocomplete item is successfully created
+  // (default is queryKey)
+  postInvalidateQueryKeys?: QueryKey[];
+  // List of query keys that must be invalidated when a Autocomplete item is successfully deleted.
+  // (default is queryKey)
+  deleteInvalidateQueryKeys?: QueryKey[];
 }
 
 export type AutocompleteOptions = AutocompleteProps & LuminaControlOptions;
@@ -154,61 +240,92 @@ export type AutocompleteOptions = AutocompleteProps & LuminaControlOptions;
 /**
  * Autocomplete component that can be created by the ControlFactory component.
  */
-const Autocomplete = React.memo((args: AutocompleteOptions) => {
+const Autocomplete = (args: AutocompleteOptions) => {
   const {
     error,
     label,
     helperText,
-    queryUrl,
+    queryUrl: url,
     queryKey,
     onChange,
     onBlur,
+    allowDelete,
+    variant,
+    size,
+    startAdornment,
+    placeholder,
+    sxTextfield,
+    onCreateHandler,
+    onCreateSuccessHandler,
+    onDeleteSuccessHandler,
+    postInvalidateQueryKeys: postInvalidateQueryKeys_,
+    deleteInvalidateQueryKeys: deleteInvalidateQueryKeys_,
+    renderOption: renderOption_,
     ...props
   } = args;
   const freeSolo = args.freeSolo ?? false;
   const multiple = args.multiple ?? false;
   const required = args.required ?? false;
-  const value = multiple ? (args.value ?? []) : (args.value ?? null);
+  const value = React.useMemo(
+    () => (multiple ? (args.value ?? []) : (args.value ?? null)),
+    [args.value, multiple]
+  );
+  const postInvalidateQueryKeys = React.useMemo(
+    () => (postInvalidateQueryKeys_ ? postInvalidateQueryKeys_ : [queryKey]),
+    [postInvalidateQueryKeys_, queryKey]
+  );
+  const deleteInvalidateQueryKeys = React.useMemo(
+    () =>
+      deleteInvalidateQueryKeys_ ? deleteInvalidateQueryKeys_ : [queryKey],
+    [deleteInvalidateQueryKeys_, queryKey]
+  );
   const [open, setOpen] = React.useState(false);
-  const async = queryUrl !== undefined && queryKey !== undefined;
+  const async = url !== undefined && queryKey !== undefined;
+  const queryUrl = React.useMemo(() => url ?? "", [url]);
   const mutationPostContext = useMutation(
     React.useMemo(
       () => ({
         mutationFn: async (data: any) => axiosPost(queryUrl ?? "", data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKey }),
+        onSuccess: (data: AutocompleteClass) => {
+          onCreateSuccessHandler?.(data);
+          invalidateQueryKeys(...(postInvalidateQueryKeys ?? []));
+        },
       }),
-      [queryUrl, queryKey]
+      [queryUrl, postInvalidateQueryKeys, onCreateSuccessHandler]
     )
   );
+  const confirm = useConfirmDialog();
   const mutationDeleteContext = useMutation(
     React.useMemo(
       () => ({
-        mutationFn: async (data: any) => axiosDelete(queryUrl ?? "", data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKey }),
+        mutationFn: async (id: any) => axiosDelete(queryUrl, id),
+        onSuccess: () => {
+          onDeleteSuccessHandler?.();
+          invalidateQueryKeys(...(deleteInvalidateQueryKeys ?? []));
+        },
       }),
-      [queryUrl, queryKey]
+      [queryUrl, deleteInvalidateQueryKeys, onDeleteSuccessHandler]
     )
   );
 
-  // Fetch the daa from the backend.
-  const queryContext = useQuery<AutocompleteClass[]>(
+  // Fetch the data from the backend.
+  const queryContext = useQuery<AutoCompleteClass[]>(
     React.useMemo(
       () => ({
+        url: queryUrl,
         queryFn: async () => axiosGet(queryUrl ?? ""),
-        select: (data: AutocompleteClass[]) =>
-          data.map((x) => x as AutocompleteClass),
+        select: (data: AutoCompleteClass[]) =>
+          data.map((x) => x as AutoCompleteClass),
         queryKey: queryKey ?? [],
         enabled: async && open,
       }),
       [async, queryUrl, queryKey, open]
     )
   );
-  const options = queryContext.data ?? [];
+  const options = React.useMemo(() => queryContext.data ?? [], [queryContext]);
 
   /**
    * Function pushes new entry to the backend.
-   *
-   * We cannot use a Tanstack mutation because we must immediately obtain and process the HTTP response.
    */
   const onPushNewEntry = React.useCallback(
     (
@@ -216,27 +333,21 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
       event: React.SyntheticEvent,
       stateValue?: AutoCompleteClass[]
     ) => {
-      const body = { label: item };
+      const body = onCreateHandler?.(item) ?? { label: item };
       mutationPostContext.mutate(body, {
         onSuccess: (data: unknown) => {
           if (stateValue) {
             if (data) {
-              stateValue.push(
-                new AutoCompleteClass(data as AutoCompleteOption)
-              );
+              stateValue.push(data as AutoCompleteClass);
               onChange?.(event, stateValue, "createOption");
             }
           } else {
-            onChange?.(
-              event,
-              new AutoCompleteClass(data as AutoCompleteOption),
-              "createOption"
-            );
+            onChange?.(event, data as AutoCompleteClass, "createOption");
           }
         },
       });
     },
-    [mutationPostContext, onChange]
+    [mutationPostContext, onChange, onCreateHandler]
   );
 
   /**
@@ -284,16 +395,87 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
    * This function is used to get the render input for the Autocomplete component.
    */
   const renderInput = React.useCallback(
-    (params: AutocompleteRenderInputParams) => (
-      <TextField
-        {...params}
-        label={label}
-        error={error}
-        required={required}
-        helperText={helperText}
-      />
-    ),
-    [label, error, required, helperText]
+    (params: AutocompleteRenderInputParams) => {
+      const slotProps: any = {
+        input: {
+          ...params.InputProps,
+          endAdornment: (
+            <>
+              {queryContext.isLoading ? (
+                <CircularProgress color="inherit" size={20} />
+              ) : null}
+              {params.InputProps.endAdornment}
+            </>
+          ),
+        },
+        htmlInput: {
+          ...params.inputProps,
+        },
+      };
+      if (startAdornment) {
+        slotProps.input.startAdornment = startAdornment(value as any);
+      }
+      return (
+        <TextField
+          {...params}
+          size={size}
+          label={label}
+          error={error}
+          required={required}
+          helperText={helperText}
+          placeholder={placeholder}
+          variant={variant}
+          sx={sxTextfield}
+          slotProps={slotProps}
+        />
+      );
+    },
+    [
+      value,
+      label,
+      error,
+      required,
+      helperText,
+      queryContext.isLoading,
+      placeholder,
+      size,
+      variant,
+      startAdornment,
+      sxTextfield,
+    ]
+  );
+
+  /**
+   * This function is used to render the options in the Autocomplete component.
+   */
+  const renderOptionLocal = React.useCallback<RenderOptionFunctionType>(
+    (props, option, state) => {
+      const { key, ...optionProps } = props;
+      return (
+        <RenderOption
+          key={key}
+          props={optionProps}
+          state={state}
+          option={option}
+          isLoading={queryContext.isLoading}
+          allowDelete={allowDelete}
+          onDelete={(event) => {
+            event.stopPropagation();
+            confirm.showDialog({
+              title: "Delete item ...",
+              message: `Are you sure you want to delete "${option.label}"?`,
+              onConfirm: () => mutationDeleteContext.mutate({ id: option.id }),
+            });
+          }}
+        />
+      );
+    },
+    [queryContext.isLoading, allowDelete, confirm, mutationDeleteContext]
+  );
+
+  const renderOption = React.useMemo(
+    () => renderOption_ ?? renderOptionLocal,
+    [renderOption_, renderOptionLocal]
   );
 
   /**
@@ -310,6 +492,7 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
     <>
       <UseMutationAlert {...mutationPostContext} />
       <UseMutationAlert {...mutationDeleteContext} />
+      <ConfirmationDialog {...confirm} />
       <FormControl error={error} fullWidth={true}>
         <MuiAutocomplete
           {...props}
@@ -319,9 +502,18 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
           onOpen={onOpen}
           onClose={onClose}
           renderInput={renderInput}
+          size={size}
           onBlur={onBlur}
           onChange={freeSolo ? onChangeHandler : onChange}
           filterOptions={freeSolo ? filterOptions : undefined}
+          getOptionLabel={React.useCallback(
+            (option: string | AutoCompleteClass) => {
+              if (Array.isArray(option)) return "";
+              return typeof option === "string" ? option : option.label;
+            },
+            []
+          )}
+          renderOption={renderOption}
           isOptionEqualToValue={React.useCallback(
             (option: AutocompleteClass, value: AutocompleteClass) =>
               option.id === value.id,
@@ -331,6 +523,8 @@ const Autocomplete = React.memo((args: AutocompleteOptions) => {
       </FormControl>
     </>
   );
-});
+};
 
-export default Autocomplete;
+export default React.memo(Autocomplete) as (
+  props: AutocompleteOptions
+) => JSX.Element;

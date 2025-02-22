@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MyAwesomeProject. If not, see <https://www.gnu.org/licenses/>.
+ * along with Lumina. If not, see <https://www.gnu.org/licenses/>.
  *
  * @author Lukas Reiter
  * @copyright Copyright (C) 2024 Lukas Reiter
@@ -30,10 +30,10 @@ import {
   GridToolbarExport,
   GridToolbarQuickFilter,
 } from "@mui/x-data-grid";
-import { queryClient } from "../../consts";
-import { Account } from "../../../models/account/account";
+import { invalidateQueryKeys } from "../../../consts";
 import { GridToolbarContainer } from "@mui/x-data-grid";
-import { UseQueryForDataGridResult } from "../tanstack/useQuery";
+import { UseDataGridScopeResult } from "./useDataGridScopeInfo";
+import { UseDataGridFilterManagerResults } from "./useDataGridFilterManager";
 
 /**
  * The default toolbar for the DataGrid.
@@ -51,12 +51,12 @@ export const defaultGridTools = [
 ];
 
 export interface DefaultDataGridToolbarOptions {
+  // Additional elements for the toolbar.
+  elements?: JSX.Element[];
   // The default toolbar has a button to create a new item. This property defines the name of the button.
   createButtonName?: string;
   // The default toolbar has a button to create a new item. This property defines the click handler of the button.
   onCreateButtonClick?: () => void;
-  // Additional elements for the toolbar.
-  elements?: JSX.Element[];
 }
 
 /**
@@ -64,32 +64,35 @@ export interface DefaultDataGridToolbarOptions {
  */
 export interface UseDefaultDataGridToolbarOptions<T>
   extends DefaultDataGridToolbarOptions {
-  // The account of the current user.
-  me: Account;
-  // The properties of the useQuery hook.
-  queryContext: UseQueryForDataGridResult<T>;
+  // Additional elements for the toolbar.
+  elements?: JSX.Element[];
+  // General information about the DataGrid.
+  scopeInfo: UseDataGridScopeResult<T>;
+  // The object to manage the DataGrid filter.
+  filterManager?: UseDataGridFilterManagerResults;
+  // The function to reset the DataGrid layout
+  onResetSettings?: () => void;
   // The default toolbar has a button to create a new item. This property defines the name of the button.
   createButtonName?: string;
   // The default toolbar has a button to create a new item. This property defines the click handler of the button.
   onCreateButtonClick?: () => void;
-  // Additional elements for the toolbar.
-  elements?: JSX.Element[];
-  // The function to reset the DataGrid layout
-  onResetSettings?: () => void;
 }
 
 /**
  * This hook returns the default toolbar for the DataGrid.
  */
 export const useDefaultDataGridToolbar = <T,>({
-  me,
-  queryContext,
+  elements,
+  scopeInfo,
+  onResetSettings,
   createButtonName,
   onCreateButtonClick,
-  elements,
-  onResetSettings,
+  filterManager,
 }: UseDefaultDataGridToolbarOptions<T>) => {
+  const { me, queryContext } = scopeInfo;
   const { queryKey, scope } = queryContext;
+  const Autocomplete = filterManager?.Autocomplete;
+
   const result = React.useMemo(() => {
     const result = [...defaultGridTools, ...(elements ?? [])];
     const createButtonAccess = me.hasCreateAccess(scope);
@@ -109,6 +112,14 @@ export const useDefaultDataGridToolbar = <T,>({
 
     if (queryKey) {
       result.push(<Box key="flex-grow-box" sx={{ flexGrow: 1 }} />);
+      // If a filterManager is present, then we display the Autocomplete component.
+      if (Autocomplete) {
+        result.push(
+          <Box key="filter-drop-down" sx={{ width: "250px" }}>
+            {Autocomplete}
+          </Box>
+        );
+      }
       result.push(
         <Tooltip title="Refresh" key="refresh-button">
           <IconButton
@@ -116,11 +127,7 @@ export const useDefaultDataGridToolbar = <T,>({
             aria-label="refresh"
             size="small"
             color="primary"
-            onClick={() =>
-              queryClient.invalidateQueries({
-                queryKey: queryKey,
-              })
-            }
+            onClick={() => invalidateQueryKeys(queryKey)}
           >
             <RefreshIcon />
           </IconButton>
@@ -151,6 +158,7 @@ export const useDefaultDataGridToolbar = <T,>({
     queryKey,
     scope,
     elements,
+    Autocomplete,
   ]);
   return React.useCallback(
     () => <GridToolbarContainer>{result}</GridToolbarContainer>,

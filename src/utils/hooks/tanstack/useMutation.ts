@@ -30,21 +30,29 @@ import { StatusMessage } from "../../../models/common";
 
 export type UseMutationOptions<
   TData = unknown,
-  TError = AxiosError<StatusMessage, any>,
   TVariables = any,
   TContext = unknown,
-> = useTanstackMutationOptions<TData, TError, TVariables, TContext>;
+> = useTanstackMutationOptions<
+  TData,
+  AxiosError<StatusMessage, any>,
+  TVariables,
+  TContext
+>;
 
 export interface IUseMutationResult {
   statusMessage: StatusMessage | undefined;
 }
 export type UseMutationResult<
   TData = unknown,
-  TError = AxiosError<StatusMessage, any>,
   TVariables = any,
   TContext = unknown,
 > = IUseMutationResult &
-  UseTanstackMutationResult<TData, TError, TVariables, TContext>;
+  UseTanstackMutationResult<
+    TData,
+    AxiosError<StatusMessage, any>,
+    TVariables,
+    TContext
+  >;
 
 /**
  * Handles the given error and returns a new error object. It ensures that also network errors are handled.
@@ -87,16 +95,20 @@ export const getStatusMessage = (
  */
 export const useMutation = <
   TData = unknown,
-  TError = AxiosError<StatusMessage, any>,
   TVariables = any,
   TContext = undefined,
 >(
-  props: UseMutationOptions<TData, TError, TVariables, TContext>
-): UseMutationResult<TData, TError, TVariables, TContext> => {
+  props: UseMutationOptions<TData, TVariables, TContext>
+): UseMutationResult<TData, TVariables, TContext> => {
   const { ...options } = props;
   let statusMessage: StatusMessage | undefined = undefined;
 
-  const mutation = useTanstackMutation<TData, TError, TVariables, TContext>({
+  const mutation = useTanstackMutation<
+    TData,
+    AxiosError<StatusMessage, any>,
+    TVariables,
+    TContext
+  >({
     ...options,
     mutationFn: props.mutationFn,
     networkMode: "offlineFirst",

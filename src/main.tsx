@@ -37,7 +37,7 @@ createRoot(document.getElementById("root")!).render(
         dateAdapter={AdapterDayjs}
         adapterLocale={ADAPTER_LOCALE}
       >
-        <ReactQueryDevtools initialIsOpen={true} />
+        <ReactQueryDevtools initialIsOpen={false} />
         <App />
       </LocalizationProvider>
     </QueryClientProvider>

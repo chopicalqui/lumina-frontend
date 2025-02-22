@@ -22,18 +22,18 @@
 import React from "react";
 import { Alert } from "@mui/material";
 import LoadingBar from "./LoadingBar";
-import {
-  UseDataGridResult,
-  MuiDataGrid,
-} from "../../utils/hooks/mui/useDataGrid";
+import { UseDataGridResult } from "../../utils/hooks/mui/datagrid/useDataGrid";
 import ConfirmationDialog, {
   ConfirmationDialogOptions,
 } from "../feedback/dialogs/ConfirmDialog";
+import LoadingIndicator from "../feedback/LoadingIndicator";
+import { MuiDataGrid } from "../../utils/hooks/mui/datagrid/useDataGridScopeInfo";
 
 const DataGrid = React.memo(<T,>(props: UseDataGridResult<T>) => {
   const {
     apiRef,
     queryContext,
+    querySettings,
     mutateResetConfig,
     confirmResetDialogOptions,
     ...dataGridProps
@@ -43,8 +43,16 @@ const DataGrid = React.memo(<T,>(props: UseDataGridResult<T>) => {
     [queryContext.data]
   );
 
-  if (queryContext.isError) {
-    const statusMessage = queryContext.statusMessage;
+  // Show loading indicator if data or settings is loading
+  if (querySettings.isLoading || queryContext.isLoading) {
+    return <LoadingIndicator open={true} />;
+  }
+
+  // Show error message if data or settings failed to load
+  if (queryContext.isError || querySettings.isError) {
+    const statusMessage = queryContext.isError
+      ? queryContext.error.response?.data
+      : querySettings.error!.response?.data;
     return (
       statusMessage && (
         <Alert severity={statusMessage.severity}>{statusMessage.message}</Alert>

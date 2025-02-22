@@ -20,31 +20,20 @@
  */
 
 import React from "react";
-import { DetailsDialogMode, ScopeEnum } from "../utils/globals";
-import {
-  useDeleteAccessTokens,
-  useQueryAccessTokens,
-} from "../models/account/access_token";
-import { useDefaultDataGridRowActions } from "../utils/hooks/mui/datagrid/useDefaultDataGridRowActions";
 import { useDataGrid } from "../utils/hooks/mui/datagrid/useDataGrid";
 import DataGrid from "../components/data/DataGrid";
-import AccessTokenDetailsDialog from "./dialogs/account/AccessTokenDetailsDialog";
+import { DetailsDialogMode, ScopeEnum } from "../utils/globals";
+import { useDefaultDataGridRowActions } from "../utils/hooks/mui/datagrid/useDefaultDataGridRowActions";
 import { useDetailsDialog } from "../utils/hooks/mui/useDetailsDialog";
-import ConfirmationDialog, {
-  ConfirmationDialogOptions,
-} from "../components/feedback/dialogs/ConfirmDialog";
+import CountryDetailsDialog from "./dialogs/CountryDetailsDialog";
 import { useDataGridScopeInfo } from "../utils/hooks/mui/datagrid/useDataGridScopeInfo";
 import { useDataGridFilterManager } from "../utils/hooks/mui/datagrid/useDataGridFilterManager";
+import { useQueryCountries } from "../models/country";
 
-const AccessTokens = React.memo(() => {
+const Countries = React.memo(() => {
   // We query all access tokens for the DataGrid.
-  const queryContext = useQueryAccessTokens(
-    React.useMemo(
-      () => ({
-        scope: ScopeEnum.DataGridAccessToken,
-      }),
-      []
-    )
+  const queryContext = useQueryCountries(
+    React.useMemo(() => ({ scope: ScopeEnum.DataGridCountry }), [])
   );
   // Gather general information required by DataGrid hooks.
   const scopeInfo = useDataGridScopeInfo(queryContext);
@@ -52,25 +41,13 @@ const AccessTokens = React.memo(() => {
   const filterManager = useDataGridFilterManager(scopeInfo);
   // We obtain the context to open the details dialog for adding new or editing/viewing existing access tokens.
   const { onOpen, ...detailsDialogContext } = useDetailsDialog(
-    React.useMemo(
-      () => ({ name: "Access Token", displayAddAndCloseButton: false }),
-      []
-    )
+    React.useMemo(() => ({ name: "Country" }), [])
   );
-  // We obtain the Tanstack mutation to allow deleting access tokens.
-  const {
-    showDialog: showConfirmDeleteDialog,
-    mutation: mutateDelete,
-    ...confirmDeleteDialogOptions
-  } = useDeleteAccessTokens();
   // We obtain the default row actions for the DataGrid.
   const rowActions = useDefaultDataGridRowActions(
     React.useMemo(
       () => ({
         scopeInfo,
-        delete: {
-          onClick: (params) => showConfirmDeleteDialog(params.id),
-        },
         view: {
           onClick: (params) => {
             onOpen({
@@ -90,7 +67,7 @@ const AccessTokens = React.memo(() => {
           },
         },
       }),
-      [scopeInfo, onOpen, showConfirmDeleteDialog]
+      [scopeInfo, onOpen]
     )
   );
   // We obtain the DataGrid configuration.
@@ -100,29 +77,20 @@ const AccessTokens = React.memo(() => {
         scopeInfo,
         rowActions,
         filterManager,
-        onCreateButtonClick: () =>
-          onOpen({
-            mode: DetailsDialogMode.Add,
-            open: true,
-          }),
       }),
-      [scopeInfo, rowActions, filterManager, onOpen]
+      [scopeInfo, rowActions, filterManager]
     )
   );
 
   return (
     <>
-      <ConfirmationDialog
-        {...(confirmDeleteDialogOptions as ConfirmationDialogOptions)}
-        mutation={mutateDelete}
-      />
-      {/* We newly mount the AccountDetailsDialog component each time to ensure the account data is newly fetched from the backend. */}
+      {/* We newly mount the CountryDetailsDialog component each time to ensure the country data is newly fetched from the backend. */}
       {detailsDialogContext.open && (
-        <AccessTokenDetailsDialog context={detailsDialogContext} />
+        <CountryDetailsDialog context={detailsDialogContext} />
       )}
       <DataGrid {...dataGrid} />
     </>
   );
 });
 
-export default AccessTokens;
+export default Countries;

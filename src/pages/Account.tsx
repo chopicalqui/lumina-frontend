@@ -20,21 +20,25 @@
  */
 
 import React from "react";
-import { useQueryAccounts, useQueryMe } from "../models/account/account";
-import { useDataGrid } from "../utils/hooks/mui/useDataGrid";
+import { useQueryAccounts } from "../models/account/account";
+import { useDataGrid } from "../utils/hooks/mui/datagrid/useDataGrid";
 import DataGrid from "../components/data/DataGrid";
 import { DetailsDialogMode, ScopeEnum } from "../utils/globals";
-import { useDefaultDataGridRowActions } from "../utils/hooks/mui/useDefaultDataGridRowActions";
+import { useDefaultDataGridRowActions } from "../utils/hooks/mui/datagrid/useDefaultDataGridRowActions";
 import { useDetailsDialog } from "../utils/hooks/mui/useDetailsDialog";
 import AccountDetailsDialog from "./dialogs/account/AccountDetailsDialog";
+import { useDataGridScopeInfo } from "../utils/hooks/mui/datagrid/useDataGridScopeInfo";
+import { useDataGridFilterManager } from "../utils/hooks/mui/datagrid/useDataGridFilterManager";
 
 const Accounts = React.memo(() => {
-  // We obtain the current user's data.
-  const me = useQueryMe();
   // We query all access tokens for the DataGrid.
   const queryContext = useQueryAccounts(
     React.useMemo(() => ({ scope: ScopeEnum.DataGridAccount }), [])
   );
+  // Gather general information required by DataGrid hooks.
+  const scopeInfo = useDataGridScopeInfo(queryContext);
+  // Allow the user to manage DataGrid filters.
+  const filterManager = useDataGridFilterManager(scopeInfo);
   // We obtain the context to open the details dialog for adding new or editing/viewing existing access tokens.
   const { onOpen, ...detailsDialogContext } = useDetailsDialog(
     React.useMemo(() => ({ name: "Account" }), [])
@@ -43,8 +47,7 @@ const Accounts = React.memo(() => {
   const rowActions = useDefaultDataGridRowActions(
     React.useMemo(
       () => ({
-        me: me!.data!,
-        queryContext,
+        scopeInfo,
         view: {
           onClick: (params) => {
             onOpen({
@@ -64,15 +67,20 @@ const Accounts = React.memo(() => {
           },
         },
       }),
-      [me, onOpen, queryContext]
+      [scopeInfo, onOpen]
     )
   );
   // We obtain the DataGrid configuration.
-  const dataGrid = useDataGrid({
-    me: me!.data!,
-    queryContext,
-    rowActions,
-  });
+  const dataGrid = useDataGrid(
+    React.useMemo(
+      () => ({
+        scopeInfo,
+        rowActions,
+        filterManager,
+      }),
+      [scopeInfo, rowActions, filterManager]
+    )
+  );
 
   return (
     <>

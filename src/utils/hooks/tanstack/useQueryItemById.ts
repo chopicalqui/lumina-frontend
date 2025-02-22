@@ -46,11 +46,12 @@ export const useQueryItemById = <T>(
   return useQuery(
     React.useMemo(
       () => ({
+        url: url,
         queryKey: queryKey,
         queryFn: async () => axiosGet<T>(url),
         select: (data: T) => new ClassRef(data),
         enabled: !!rowId,
-        disableAutoRefresh: true,
+        disableAutoRefresh: false,
         refetchOnMount: "always",
         metaInfo: metaInfo,
         scope: scope,
