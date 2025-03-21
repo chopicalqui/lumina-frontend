@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MyAwesomeProject. If not, see <https://www.gnu.org/licenses/>.
+ * along with Lumina. If not, see <https://www.gnu.org/licenses/>.
  *
  * @author Lukas Reiter
  * @copyright Copyright (C) 2024 Lukas Reiter
@@ -66,12 +66,7 @@ const DataGrid = React.memo(<T,>(props: UseDataGridResult<T>) => {
         {...(confirmResetDialogOptions as ConfirmationDialogOptions)}
         mutation={mutateResetConfig}
       />
-      <MuiDataGrid
-        {...dataGridProps}
-        apiRef={apiRef}
-        rows={rows as any}
-        density={"compact"}
-      />
+      <MuiDataGrid {...dataGridProps} apiRef={apiRef} rows={rows as any} />
       <LoadingBar query={queryContext} />
     </>
   );

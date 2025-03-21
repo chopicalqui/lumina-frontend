@@ -262,9 +262,13 @@ export const checkStateForErrors = (state: ControlFactoryReducerState) => {
 export const getFinalState = (state: ControlFactoryReducerState) => {
   const result: StateValueType = {};
   Object.entries(state.columns).forEach(([field, fieldColumn]) => {
-    if (!fieldColumn.noSubmit) {
-      const fieldValue = state.values[field];
-      const finalValue = fieldColumn?.getFinalValue?.(fieldValue) ?? fieldValue;
+    const fieldValue = state.values[field];
+    const finalValue = fieldColumn?.getFinalValue?.(fieldValue) ?? fieldValue;
+    const empty = (finalValue?.toString() ?? "").length === 0;
+    if (
+      !fieldColumn.noSubmit ||
+      !(empty && fieldColumn.options.required !== true)
+    ) {
       result[field] = finalValue;
     }
   });

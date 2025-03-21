@@ -67,6 +67,17 @@ export class StatusMessage {
 }
 
 /**
+ * Data class for WebSocket status messages.
+ */
+export class WebSocketMessage extends StatusMessage {
+  public readonly payload: any;
+  constructor(data: any) {
+    super(data);
+    this.payload = data.payload;
+  }
+}
+
+/**
  * Default input validation for TextField components.
  */
 export const verifyTextFieldDefault = (props: GetErrorOptions) => {

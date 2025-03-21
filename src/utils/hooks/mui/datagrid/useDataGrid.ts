@@ -44,6 +44,7 @@ import {
   DataGridOptions,
   UseDataGridScopeResult,
 } from "./useDataGridScopeInfo";
+import { useQueryMe } from "../../../../models/account/account";
 
 /**
  * This interface defines the properties of the useDataGrid hook.
@@ -90,6 +91,12 @@ export const useDataGrid = <T>({
   } = scopeInfo;
   const onFilterUpdate = filterManager?.onFilterUpdate;
   const selectedFilterQueryKey = filterManager?.selectedFilterQueryKey;
+
+  const me = useQueryMe();
+  const density = React.useMemo(
+    () => me.data?.tableDensity ?? "compact",
+    [me.data?.tableDensity]
+  );
 
   /**
    * Update DataGrid configuration for DataGrid.
@@ -216,6 +223,7 @@ export const useDataGrid = <T>({
       ...dataGrid,
       apiRef,
       rows: data,
+      density,
       columns,
       initialState,
       queryContext,
@@ -238,6 +246,7 @@ export const useDataGrid = <T>({
       dataGrid,
       apiRef,
       data,
+      density,
       columns,
       initialState,
       querySettings,

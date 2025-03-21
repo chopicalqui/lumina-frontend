@@ -19,6 +19,8 @@
  * @license GPLv3
  */
 
+import { API_PATH_PREFIX } from "../../utils/consts";
+
 // Query keys for accounts
 export const queryKeyAccountMe = ["me"];
 export const queryKeyAccounts = ["accounts"];
@@ -33,9 +35,13 @@ export const queryKeyAccountMeSettings = [
 export const queryKeyScopes = [...queryKeyAccountMe, "scopes"];
 export const queryKeyAccessTokens = [...queryKeyAccountMe, "access-tokens"];
 export const queryKeyAccountMeDataGrid = [...queryKeyAccountMe, "data-grids"];
+/*
+ * Defines all the constants related to authentication.
+ */
 
 // REST API endpoints for accounts
 export const URL_RENEW = "/renew";
+export const URL_LOGIN = API_PATH_PREFIX + "/redirect-login";
 export const URL_LOGOUT = "/logout";
 export const URL_FILTER_MENU_SUFFIX = "/filter-menu";
 export const URL_FILTER_SELECTED_SUFFIX = "/selected";
@@ -50,6 +56,8 @@ export const URL_USERS_ME_TOGGLE_MENU =
 export const URL_USERS_ME_TABLE_DENSITY =
   URL_ACCOUNTS_ME_SETTINGS + "/table-density";
 export const URL_ACCOUNTS_ME_AVATAR = URL_ACCOUNTS_ME_SETTINGS + "/avatar";
+export const URL_FULL_ACCOUNTS_ME_AVATAR =
+  API_PATH_PREFIX + URL_ACCOUNTS_ME_AVATAR;
 export const URL_ACCOUNTS_ME_AVATAR_RESET = URL_ACCOUNTS_ME_AVATAR + "/reset";
 // DataGrid
 const URL_DATAGRID = URL_ACCOUNTS_ME_SETTINGS + "/data-grid";

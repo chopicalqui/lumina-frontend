@@ -53,7 +53,7 @@ import dayjs from "dayjs";
 import { useQueryItems } from "../../utils/hooks/tanstack/useQueryItems";
 import { useQueryItemById } from "../../utils/hooks/tanstack/useQueryItemById";
 import { GetErrorOptions } from "../../components/inputs/common";
-import { GridRenderCellParams } from "@mui/x-data-grid";
+import { GridDensity, GridRenderCellParams } from "@mui/x-data-grid";
 
 /**
  * Core model class for the Account model.
@@ -286,9 +286,10 @@ export class AccountRead extends NamedModelBase {
 export class Account extends AccountRead {
   public readonly lightMode: boolean;
   public readonly sidebarCollapsed: boolean;
-  public readonly tableDensity: string;
+  public readonly tableDensity: GridDensity;
   public readonly image: string;
   public readonly expiration: Date;
+  public readonly hasAvatar: boolean;
   private readonly _roles: AccountRole[];
 
   constructor(data: any) {
@@ -298,6 +299,8 @@ export class Account extends AccountRead {
     this.tableDensity = data.table_density;
     this.image = data.avatar;
     this.expiration = new Date(data.expiration);
+    this.hasAvatar = data.has_avatar;
+    this.sidebarCollapsed = data.sidebar_collapsed;
     this._roles = data.roles;
   }
 

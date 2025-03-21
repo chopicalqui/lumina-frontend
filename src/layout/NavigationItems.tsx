@@ -19,42 +19,59 @@
  * @license GPLv3
  */
 
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import TimelineIcon from "@mui/icons-material/Timeline";
+import KeyIcon from "@mui/icons-material/Key";
 import PublicIcon from "@mui/icons-material/Public";
-import { type Navigation } from "@toolpad/core/AppProvider";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import { ScopeEnum } from "../utils/globals";
+import { ROUTE_SETTINGS } from "../utils/hooks/react-router/common";
 
-export enum PageEnum {
-  accounts = "accounts",
-  access_tokens = "access-tokens",
-  countries = "countries",
+export interface NavigationBase {
+  readonly title: string;
 }
 
-export const NAVIGATION: Navigation = [
+export interface NavigationPageItem extends NavigationBase {
+  scope: ScopeEnum;
+  routerPath: string;
+  componentPath: string;
+  icon: JSX.Element;
+  children?: [any];
+}
+
+export interface NavigationHeader extends NavigationBase {
+  readonly children?: NavigationPageItem[];
+}
+
+/**
+ * Define the navigation items for the application.
+ */
+export const NAVIGATION: NavigationHeader[] = [
   {
-    kind: "header",
     title: "Main Items",
   },
   {
-    kind: "divider",
-  },
-  {
-    kind: "header",
-    title: "Administration",
-  },
-  {
-    segment: PageEnum.accounts,
-    title: "Accounts",
-    icon: <DashboardIcon />,
-  },
-  {
-    segment: PageEnum.access_tokens,
-    title: "Access Tokens",
-    icon: <TimelineIcon />,
-  },
-  {
-    segment: PageEnum.countries,
-    title: "Countries",
-    icon: <PublicIcon />,
+    title: "Settings",
+    children: [
+      {
+        title: "Accounts",
+        routerPath: `${ROUTE_SETTINGS}/accounts`,
+        componentPath: "Account.tsx",
+        icon: <DashboardIcon />,
+        scope: ScopeEnum.PageAccount,
+      },
+      {
+        title: "Access Tokens",
+        routerPath: `${ROUTE_SETTINGS}/access-tokens`,
+        componentPath: "AccessToken.tsx",
+        icon: <KeyIcon />,
+        scope: ScopeEnum.PageAccessToken,
+      },
+      {
+        title: "Countries",
+        routerPath: `${ROUTE_SETTINGS}/countries`,
+        componentPath: "Country.tsx",
+        icon: <PublicIcon />,
+        scope: ScopeEnum.PageCountry,
+      },
+    ],
   },
 ];

@@ -116,11 +116,19 @@ export const useQuery = <T>({
     queryKey: queryKey,
     enabled: options.enabled ?? true,
     retry: React.useCallback((failureCount: number, error: Error) => {
-      // Abort retries if the error status code is 401
+      // Abort retries if the error status code is 500
       if (
         axios.isAxiosError(error) &&
-        [401, 500].includes(error.response?.status ?? 0)
+        [500, 401].includes(error.response?.status ?? 0)
       ) {
+        return false; // Do not retry
+      }
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 401 &&
+        failureCount === 2
+      ) {
+        window.location.replace("/login");
         return false; // Do not retry
       }
       return failureCount < 3; // Retry up to 3 times for other errors

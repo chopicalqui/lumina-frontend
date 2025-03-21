@@ -19,52 +19,54 @@
  * @license GPLv3
  */
 
-import { AppProvider } from "@toolpad/core/AppProvider";
-import { DashboardLayout } from "@toolpad/core/DashboardLayout";
-import { useDemoRouter } from "@toolpad/core/internal";
-import { theme } from "./layout/theme";
-import { useQuerySession } from "./utils/hooks/tanstack/useQuerySession";
-import PageContent from "./layout/PageContent";
-import { NAVIGATION, PageEnum } from "./layout/NavigationItems";
-import { APP_NAME } from "./utils/consts";
-import { SessionManager } from "./layout/SessionManager";
-
-const BRANDING = {
-  title: APP_NAME.toLocaleUpperCase(),
-};
+import React from "react";
+import { RouterProvider } from "react-router-dom";
+import { Alert, CssBaseline, ThemeProvider } from "@mui/material";
+import { getTheme } from "./layout/core/theme";
+import { SessionManager } from "./layout/core/SessionManager";
+import { useQueryMe } from "./models/account/account";
+import { useRouter } from "./utils/hooks/react-router/useRouter";
+import LoadingIndicator from "./components/feedback/LoadingIndicator";
 
 export default function App() {
-  const { session, authentication, meQuery } = useQuerySession();
-  const router = useDemoRouter(`/${PageEnum.accounts}`);
-  const me = meQuery.data;
-  const statusMessage = meQuery.statusMessage;
-  const isError = meQuery.isError;
+  const me = useQueryMe();
+  const account = me?.data;
+  const router = useRouter(account);
+  const theme = React.useMemo(
+    () => getTheme(account?.lightMode ? "light" : "dark"),
+    [account]
+  );
+  let component: JSX.Element | undefined;
+
+  if (me.isLoading) {
+    component = <LoadingIndicator open={true} />;
+  } else if (me.isError) {
+    component = (
+      <Alert
+        severity="error"
+        sx={{ position: "absolute", top: "0", width: "100%" }}
+      >
+        An error occurred.
+      </Alert>
+    );
+  } else if (!router) {
+    component = (
+      <Alert
+        severity="error"
+        sx={{ position: "absolute", top: "0", width: "100%" }}
+      >
+        You do not have any access.
+      </Alert>
+    );
+  } else {
+    component = <RouterProvider router={router} />;
+  }
 
   return (
-    <>
-      <SessionManager account={me} />
-      <AppProvider
-        session={session}
-        authentication={authentication}
-        navigation={NAVIGATION}
-        branding={BRANDING}
-        router={router}
-        theme={theme}
-      >
-        <DashboardLayout
-          disableCollapsibleSidebar
-          defaultSidebarCollapsed={me?.sidebarCollapsed}
-          hideNavigation={session === null}
-        >
-          <PageContent
-            me={me}
-            isError={isError}
-            statusMessage={statusMessage}
-            pathname={router.pathname}
-            navigate={router.navigate}
-          />
-        </DashboardLayout>
-      </AppProvider>
-    </>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <SessionManager account={account} />
+      {component}
+    </ThemeProvider>
   );
 }

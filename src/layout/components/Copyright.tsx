@@ -20,19 +20,40 @@
  */
 
 import React from "react";
-import { Backdrop, CircularProgress } from "@mui/material";
+import Typography from "@mui/material/Typography";
+import { TypographyProps } from "@mui/material/Typography";
+import { COPYRIGHT_LONG, COPYRIGHT_SHORT } from "../../utils/consts";
 
-const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
+/**
+ * Options for the `Copyright` component.
+ */
+interface CopyrightOptions extends TypographyProps {
+  open: boolean;
+}
+
+/**
+ * A component that displays the copyright.
+ */
+const Copyright = (props: CopyrightOptions) => {
+  const content = React.useMemo(() => {
+    if (props.open) {
+      return COPYRIGHT_LONG;
+    } else {
+      return COPYRIGHT_SHORT;
+    }
+  }, [props.open]);
+
   return (
-    <>
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={open}
-      >
-        <CircularProgress color="primary" />
-      </Backdrop>
-    </>
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      align="center"
+      sx={{ mb: 1 }}
+      {...props}
+    >
+      {content}
+    </Typography>
   );
-});
+};
 
-export default LoadingIndicator;
+export default Copyright;

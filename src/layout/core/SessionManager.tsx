@@ -21,7 +21,7 @@
 import React from "react";
 import { throttle } from "lodash";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { Account } from "../models/account/account";
+import { Account } from "../../models/account/account";
 import {
   Box,
   Button,
@@ -34,14 +34,14 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { logoutSession } from "../utils/axios";
+import { logoutSession } from "../../utils/axios";
 import {
   SESSION_TIMEOUT as SESSION_TIMEOUT_SECONDS,
   SESSION_TIMEOUT_BUFFER as SESSION_TIMEOUT_BUFFER_SECONDS,
   SESSION_TIMEOUT_WARNING as SESSION_TIMEOUT_WARNING_SECONDS,
-} from "../utils/consts";
-import { useRenewMutation } from "../utils/hooks/tanstack/useRenewMutation";
-import { UseMutationAlert } from "../components/feedback/TanstackAlert";
+} from "../../utils/consts";
+import { useRenewMutation } from "../../utils/hooks/tanstack/useRenewMutation";
+import { UseMutationAlert } from "../../components/feedback/TanstackAlert";
 
 const SESSION_TIMEOUT = SESSION_TIMEOUT_SECONDS * 1000;
 const SESSION_TIMEOUT_BUFFER = SESSION_TIMEOUT_BUFFER_SECONDS * 1000;

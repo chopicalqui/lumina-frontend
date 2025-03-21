@@ -19,38 +19,24 @@
  * @license GPLv3
  */
 
-import { createTheme } from "@mui/material";
+import { createTheme, PaletteMode, ThemeOptions } from "@mui/material";
 
 // Source: https://mui.com/toolpad/core/react-app-provider/
-export const theme = createTheme({
-  cssVariables: {
-    colorSchemeSelector: "data-toolpad-color-scheme",
-  },
-  colorSchemes: {
-    light: {
-      palette: {
-        background: {
-          default: "#F9F9FE",
-          paper: "#EEEEF9",
-        },
-      },
+export const getTheme = (mode: PaletteMode): ThemeOptions =>
+  createTheme({
+    palette: {
+      mode,
+      ...(mode === "light"
+        ? {
+            primary: {
+              main: "#031059",
+              light: "#72A9F2",
+              dark: "#731702",
+              contrastText: "#dfdfdf",
+            },
+          }
+        : {
+            mode: "dark",
+          }),
     },
-    dark: {
-      palette: {
-        background: {
-          default: "#2A4364",
-          paper: "#112E4D",
-        },
-      },
-    },
-  },
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 600,
-      lg: 1200,
-      xl: 1536,
-    },
-  },
-});
+  });

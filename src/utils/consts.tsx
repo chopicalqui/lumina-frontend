@@ -21,6 +21,7 @@
 
 import Axios from "axios";
 import { QueryClient, QueryCache, QueryKey } from "@tanstack/react-query";
+import { Link } from "@mui/material";
 
 export enum MuiLicenseType {
   Community = 10,
@@ -60,6 +61,28 @@ export const SESSION_TIMEOUT_WARNING = 4 * 60;
 // The session expiration warning is shown SESSION_TIMEOUT - SESSION_TIMEOUT_WARNING - SESSION_TIMEOUT_BUFFER
 // seconds of inactivity.
 export const SESSION_TIMEOUT_BUFFER = 20;
+
+export const COPYRIGHT_LONG = (
+  <>
+    Copyright ©
+    <Link
+      color="inherit"
+      href="https://github.com/chopicalqui"
+      sx={{ mx: 0.5 }}
+    >
+      Chopicalqui
+    </Link>
+    {new Date().getFullYear()}
+    {"."}
+  </>
+);
+export const COPYRIGHT_SHORT = (
+  <>
+    <Link color="inherit" href="https://github.com/chopicalqui">
+      © C.
+    </Link>
+  </>
+);
 
 if (SESSION_TIMEOUT < SESSION_TIMEOUT_WARNING) {
   throw new Error(

@@ -20,19 +20,20 @@
  */
 
 import React from "react";
-import { Backdrop, CircularProgress } from "@mui/material";
+import { Paper } from "@mui/material";
 
-const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
+const MainPaper: React.FC<{
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}> = ({ children, style }) => {
   return (
-    <>
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={open}
-      >
-        <CircularProgress color="primary" />
-      </Backdrop>
-    </>
+    <Paper
+      sx={{ display: "flex", flexDirection: "column" }}
+      style={style || { height: "100%" }}
+    >
+      {children}
+    </Paper>
   );
-});
+};
 
-export default LoadingIndicator;
+export default MainPaper;

@@ -20,19 +20,23 @@
  */
 
 import React from "react";
-import { Backdrop, CircularProgress } from "@mui/material";
 
-const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
-  return (
-    <>
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={open}
-      >
-        <CircularProgress color="primary" />
-      </Backdrop>
-    </>
-  );
-});
+export interface UserProfileDialogResult {
+  open: boolean;
+  handleOpen: () => void;
+  handleClose: () => void;
+}
 
-export default LoadingIndicator;
+export const useUserProfileDialog = (): UserProfileDialogResult => {
+  const [open, setOpen] = React.useState(false);
+
+  const handleOpen = React.useCallback(() => {
+    setOpen(true);
+  }, [setOpen]);
+
+  const handleClose = React.useCallback(() => {
+    setOpen(false);
+  }, [setOpen]);
+
+  return { open, handleOpen, handleClose };
+};

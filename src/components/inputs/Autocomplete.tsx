@@ -252,6 +252,7 @@ const Autocomplete = (args: AutocompleteOptions) => {
     allowDelete,
     variant,
     size,
+    options: staticOptions,
     startAdornment,
     placeholder,
     sxTextfield,
@@ -322,7 +323,10 @@ const Autocomplete = (args: AutocompleteOptions) => {
       [async, queryUrl, queryKey, open]
     )
   );
-  const options = React.useMemo(() => queryContext.data ?? [], [queryContext]);
+  const options = React.useMemo(
+    () => queryContext.data ?? staticOptions ?? [],
+    [queryContext, staticOptions]
+  );
 
   /**
    * Function pushes new entry to the backend.

@@ -28,7 +28,7 @@ import { TanstackAlert } from "./TanstackAlert";
  */
 export interface AlertSnackbarOptions {
   context?: StatusMessage;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 /**

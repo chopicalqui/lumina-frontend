@@ -19,20 +19,4 @@
  * @license GPLv3
  */
 
-import React from "react";
-import { Backdrop, CircularProgress } from "@mui/material";
-
-const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
-  return (
-    <>
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={open}
-      >
-        <CircularProgress color="primary" />
-      </Backdrop>
-    </>
-  );
-});
-
-export default LoadingIndicator;
+export const ROUTE_SETTINGS = "settings";

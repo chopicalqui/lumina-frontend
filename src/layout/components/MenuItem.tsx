@@ -20,19 +20,33 @@
  */
 
 import React from "react";
-import { Backdrop, CircularProgress } from "@mui/material";
+import { NavLink } from "react-router-dom";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import { grey } from "@mui/material/colors";
+import { useTheme } from "@mui/material/styles";
 
-const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
+const MenuItem: React.FC<{
+  to: string;
+  primary: string;
+  icon: React.ReactNode;
+}> = (props) => {
+  const lightMode = useTheme().palette.mode === "light";
   return (
-    <>
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={open}
-      >
-        <CircularProgress color="primary" />
-      </Backdrop>
-    </>
+    <ListItemButton
+      to={props.primary}
+      component={NavLink}
+      sx={{
+        "&.active": {
+          backgroundColor: lightMode ? grey[200] : grey[800],
+        },
+      }}
+    >
+      <ListItemIcon>{props.icon}</ListItemIcon>
+      <ListItemText primary={props.to} />
+    </ListItemButton>
   );
-});
+};
 
-export default LoadingIndicator;
+export default MenuItem;

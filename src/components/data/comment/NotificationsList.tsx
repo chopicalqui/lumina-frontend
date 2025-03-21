@@ -18,21 +18,12 @@
  * @copyright Copyright (C) 2024 Lukas Reiter
  * @license GPLv3
  */
+interface NotificationsListOptions {
+  isAuthenticated?: boolean;
+}
 
-import React from "react";
-import { Backdrop, CircularProgress } from "@mui/material";
+const NotificationsList = (_: NotificationsListOptions) => {
+  return <></>;
+};
 
-const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
-  return (
-    <>
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={open}
-      >
-        <CircularProgress color="primary" />
-      </Backdrop>
-    </>
-  );
-});
-
-export default LoadingIndicator;
+export default NotificationsList;

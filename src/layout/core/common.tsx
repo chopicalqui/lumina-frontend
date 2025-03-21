@@ -19,20 +19,20 @@
  * @license GPLv3
  */
 
-import React from "react";
-import { Backdrop, CircularProgress } from "@mui/material";
+import React, { Suspense } from "react";
+import LoadingIndicator from "../../components/feedback/LoadingIndicator";
 
-const LoadingIndicator: React.FC<{ open: boolean }> = React.memo(({ open }) => {
+/*
+ * This helper function lazy loads components.
+ * see also: https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
+ */
+export const LazyLoad = (module: string) => {
+  const Component = React.lazy(() => import(`../../pages/${module}.tsx`));
   return (
-    <>
-      <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={open}
-      >
-        <CircularProgress color="primary" />
-      </Backdrop>
-    </>
+    <Suspense fallback={<LoadingIndicator open={true} />}>
+      <Component />
+    </Suspense>
   );
-});
+};
 
-export default LoadingIndicator;
+export const ErrorPage = () => LazyLoad("ErrorPage");

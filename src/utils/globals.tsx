@@ -74,6 +74,7 @@ export enum DetailsDialogMode {
  * It is used for checking whether the user has access to this component.
  */
 export enum ScopeEnum {
+  WebSockets = "885e12bd-156f-4db9-8ef6-5ac04c7ad30d",
   PageAccount = "e4f9c2cd-3500-4a5c-be7a-673a24e9f873",
   PageAccessToken = "5c4da514-4545-4628-8b10-1bcebf6289a1",
   PageCountry = "e7904334-aa1a-454d-9d4b-0dfe895f959b",
